@@ -28,7 +28,7 @@ Load the Haskell file into ghci, for example via
 `stack exec ghci -- FILE.hs`, and then invoke the main function by typing `main`
 at the ghci prompt. Just run the racket file via `racket FILE.rkt`.
 
-### Import list of commandline options
+### Important list of commandline options
 
 * To use the same syntax for generics as Go, use the `--modern` commandline
   switch. Type arguments are then put in square brackets `[...]`.
