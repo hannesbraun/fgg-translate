@@ -1,0 +1,7 @@
+/// TEST TYPECHECK_BAD: B is not a subtype of A
+
+package main;
+type A struct {};
+func (x0 A) m1(x1 A) A { return x0 };
+type B struct { f A };
+func main() { _ = A{}.m1(A{}.m1(B{A{}})) }

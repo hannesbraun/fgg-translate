@@ -1,0 +1,8 @@
+/// TEST EVAL_GOOD: "'(tuple-3 (-sig ()) 42 ())"
+
+func foo(x Any) string {
+    return fmt.Sprintf("%v", x)
+}
+func main() {
+    var _ = foo(42)
+}

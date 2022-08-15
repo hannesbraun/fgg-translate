@@ -1,0 +1,8 @@
+/// TEST TYPECHECK_GOOD
+
+package main;
+type Any(type ) interface {};
+type A(type ) struct {};
+type B(type ) struct {};
+func (x0 B(type )) m(type a Any())(x1 a) a { return x1 };
+func main() { _ = B(){}.m(A())(A(){}) }

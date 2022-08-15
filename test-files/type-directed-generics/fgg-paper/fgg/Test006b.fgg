@@ -1,0 +1,6 @@
+/// TEST TYPECHECK_BAD: Upper bound A must be an interface type
+
+package main;
+type IA(type ) interface { m1(type a A())() A() };
+type A(type ) struct {};
+func main() { _ = A(){} }

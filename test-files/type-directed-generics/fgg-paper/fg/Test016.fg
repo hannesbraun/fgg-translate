@@ -1,0 +1,7 @@
+/// TEST TYPECHECK_GOOD
+
+package main;
+type Any interface {};
+type ToAny struct { any Any };
+type A struct {};
+func main() { _ = ToAny{A{}}.any.(A) }

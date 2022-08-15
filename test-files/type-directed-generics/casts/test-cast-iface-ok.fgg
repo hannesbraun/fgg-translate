@@ -1,0 +1,11 @@
+/// TEST EVAL_GOOD: '(tuple-2 Kt-C tuple-0)
+
+package main;
+type I interface { foo() C };
+type ToAny struct { any Any };
+type A struct {};
+type C struct {};
+func (this A) foo() C { return C{} };
+type B struct {};
+func m(type b Any)() b { return ToAny{A{}}.any.(b) };
+func main() { _ = m(I)().foo() } // evals to C{}

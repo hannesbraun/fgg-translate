@@ -1,0 +1,8 @@
+/// TEST TYPECHECK_GOOD
+
+package main;
+type IA interface { m1(x1 A) A };
+type A struct {};
+func (x0 A) m1(x1 A) A { return x1 };
+type B struct { f IA };
+func main() { _ = B{A{}} }

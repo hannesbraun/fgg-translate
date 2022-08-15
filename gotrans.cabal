@@ -1,0 +1,161 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: fce369093737f1971ff760e7958ba7e3c151a3c1334453cd8961e65c47de8499
+
+name:           gotrans
+version:        0.1.0.0
+description:    Translation from Featherweight (Generic) Go to various target languages
+author:         Anonymous
+maintainer:     Anonymous
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    gotrans
+    package.yaml
+    stack.yaml
+    test-files/builtin-types/Example.go
+    test-files/casts/Example.go
+    test-files/casts/Fail1.go
+    test-files/casts/Fail2.go
+    test-files/casts/Fail3.go
+    test-files/casts/Fail4.go
+    test-files/casts/Fail5.go
+    test-files/casts/Lib.go
+    test-files/iface-call/Example.go
+    test-files/iface-field/Example.go
+    test-files/recursive-interfaces-1/Example.go
+    test-files/recursive-interfaces-2/Example.go
+    test-files/recursive-interfaces-3/Example.go
+    test-files/recursive-interfaces-4/Example.go
+    test-files/same-name-multiple-types/Example.go
+    test-files/simple-structural/Example.go
+    test-files/structs/Example.go
+    test-files/typedefs/Example.go
+    test-files/builtin-types/Example.hs
+    test-files/builtin-types/Example_NoCasts.hs
+    test-files/casts/Example.hs
+    test-files/casts/Fail1.hs
+    test-files/casts/Fail2.hs
+    test-files/casts/Fail3.hs
+    test-files/casts/Fail4.hs
+    test-files/casts/Fail5.hs
+    test-files/functions/HaskellByHand.hs
+    test-files/iface-call/Example.hs
+    test-files/iface-call/Example_NoCasts.hs
+    test-files/iface-field/Example.hs
+    test-files/iface-field/Example_NoCasts.hs
+    test-files/recursive-interfaces-1/Example.hs
+    test-files/recursive-interfaces-1/Example_NoCasts.hs
+    test-files/recursive-interfaces-2/Example.hs
+    test-files/recursive-interfaces-2/Example_NoCasts.hs
+    test-files/recursive-interfaces-3/Example.hs
+    test-files/recursive-interfaces-3/Example_NoCasts.hs
+    test-files/recursive-interfaces-4/Example.hs
+    test-files/recursive-interfaces-4/Example_NoCasts.hs
+    test-files/same-name-multiple-types/Example.hs
+    test-files/same-name-multiple-types/Example_NoCasts.hs
+    test-files/simple-structural/Example.hs
+    test-files/simple-structural/Example_NoCasts.hs
+    test-files/structs/Example.hs
+    test-files/typedefs/Example.hs
+
+library
+  exposed-modules:
+      Common.Driver
+      Common.FGAST
+      Common.FGGAST
+      Common.FGGParser
+      Common.FGGPretty
+      Common.FGParser
+      Common.HaskellAST
+      Common.HaskellPretty
+      Common.PrettyUtils
+      Common.Types
+      Common.Utils
+      SyntaxDirected.Translation
+      TypeDirected.Examples
+      TypeDirected.HaskellBackend
+      TypeDirected.Target
+      TypeDirected.TypeDirected
+      TypeDirectedGeneric.C
+      TypeDirectedGeneric.CPretty
+      TypeDirectedGeneric.SExp
+      TypeDirectedGeneric.TargetLanguage
+      TypeDirectedGeneric.TransCommon
+      TypeDirectedGeneric.Translation
+  other-modules:
+      Paths_gotrans
+  hs-source-dirs:
+      src
+  ghc-options: -Werror -W -fwarn-unused-imports -fwarn-unused-binds -fwarn-unused-matches -fwarn-unused-do-bind -fwarn-wrong-do-bind -fwarn-missing-signatures -fno-warn-partial-type-signatures -Wredundant-constraints
+  build-depends:
+      HTF
+    , base >=4.7 && <5
+    , containers
+    , directory
+    , dlist
+    , extra
+    , filepath
+    , groom
+    , mtl
+    , optparse-applicative
+    , parsec
+    , prettyprinter
+    , process >=1.6
+    , raw-strings-qq >=1.1
+    , regex-base
+    , regex-tdfa
+    , safe
+    , syb >=0.7
+    , text
+    , time
+    , unix
+  default-language: Haskell2010
+
+executable gotrans
+  main-is: Main.hs
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Werror -W -fwarn-unused-imports -fwarn-unused-binds -fwarn-unused-matches -fwarn-unused-do-bind -fwarn-wrong-do-bind -fwarn-missing-signatures -fno-warn-partial-type-signatures -Wredundant-constraints
+  build-depends:
+      base >=4.7 && <5
+    , dlist
+    , gotrans
+    , groom
+    , process >=1.6
+    , raw-strings-qq >=1.1
+    , regex-base
+    , regex-tdfa
+    , syb >=0.7
+    , unix
+  default-language: Haskell2010
+
+test-suite go-types-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      TestsForTypeDirectedGenerics
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Werror -W -fwarn-unused-imports -fwarn-unused-binds -fwarn-unused-matches -fwarn-unused-do-bind -fwarn-wrong-do-bind -fwarn-missing-signatures -fno-warn-partial-type-signatures -Wredundant-constraints
+  build-depends:
+      HTF
+    , base >=4.7 && <5
+    , dlist
+    , filepath
+    , gotrans
+    , groom
+    , process
+    , raw-strings-qq >=1.1
+    , regex-base
+    , regex-tdfa
+    , syb >=0.7
+    , text
+    , unix
+  default-language: Haskell2010

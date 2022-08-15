@@ -1,0 +1,26 @@
+/// TEST EVAL_GOOD: '(tuple-2 (Kt-Box (tuple-1 Kt-int)) (tuple-1 0))
+
+type Box(type a) struct { content a };
+
+func toAny(type a Any)(x a) Any {
+    return x
+}
+
+// The toAny method is required because the rules for assertions are
+// weird: in e.(t), e cannot have the type of a type variable!
+func foo(type a Any, b Any)(x a) Box(b) {
+    return toAny(a)(x).(Box(b))
+};
+
+func main() {
+    // This example demonstrates that you must represent a type variable by
+    // (a) the runtime representation of the concrete type that is used for
+    // the variable and (b) the dictionary for its bound
+
+    // FAILS
+    // fmt.Printf("%#v", Empty(){}.foo(Box(Int()), Bool())(Box(Int()){Zero(){}}))
+
+    // WORKS
+    var _ = foo(Box(int), int)(Box(int){0})
+
+}

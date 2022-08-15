@@ -1,0 +1,5 @@
+/// TEST TYPECHECK_GOOD
+
+package main;
+type A struct {};
+func main() { _ = A{} }

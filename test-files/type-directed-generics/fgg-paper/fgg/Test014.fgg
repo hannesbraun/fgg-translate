@@ -1,0 +1,7 @@
+/// TEST TYPECHECK_BAD: A is not a subtype of b
+
+package main;
+type A(type ) struct {};
+type B(type a Any()) struct { f a };
+func (x0 B(type a Any())) m(type b Any())() b { return A(){} };
+func main() { _ = B(A()){A(){}}.m(B(A()))(B(A()){A(){}}).f }

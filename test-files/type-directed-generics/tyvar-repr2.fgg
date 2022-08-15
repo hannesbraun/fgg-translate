@@ -1,0 +1,58 @@
+/// TEST EVAL_GOOD: '(tuple-3 (-sig ((Km-m2 (tuple-2 tuple-0 (tuple-2 Kt-Iface Kt-Any))))) (tuple-2 Kt-Box (tuple-1 (tuple-3 (-sig ()) 42 ()))) (#<procedure>))
+
+// 2021-11-12: This example demonstrates a bug in the translation detected
+// while proving semantic preservation.
+//
+// The root of the bug is the following:
+//
+// A type variable a instantiated with an interface type is represented
+// by a pair (sigs, up), where sigs is a representation of the interface's
+// method signatures and up is a function lifting a value of type a to
+// the bound of a.
+// What happens if a appears nested in some other type expression? Then
+// we don't want the represenation of the interface's method signatures
+// but a symbolic representation of the interface. This is necessary
+// because an interface type might appear  recursively in the signatures
+// of its own methods.
+//
+// The example exploits the bug as follows:
+//
+// The example instantiates type variable a with Iface and passes
+// a Box-value for parameter x. Box implements Iface and BoxIface(Iface).
+// In the type assertion, we then need to check that x implements all
+// methods of BoxIface(a), i.e. BoxIface(Iface). For this check to succeed,
+// we need to instantiate type variable b of BoxIface with the
+// symbolic representation of Iface and not with the representation of
+// its signatures.
+//
+// The unexpected error at runtime is:
+//
+// ERROR: found implementation of method Km-m2 for struct Kt-Box with signature
+// (tuple-2 tuple-0 (tuple-2 Kt-Iface Kt-Any))
+// but this does not match required signature
+// (tuple-2 tuple-0 (tuple-2 (-sig ((Km-m1 (tuple-2 tuple-0 (tuple-2 Kt-Iface Kt-Any))))) Kt-Any))
+//
+// Executing the example with the implementation from the Featherweight Go paper
+// (see tyvar-repr2-feather.fgg) // does not lead to a runtime error but returns
+// Box{42}. This is the expected behavior.
+
+type Box struct { content Any }
+type Iface interface { m1(x Iface) Any }
+type BoxIface(type b) interface { m2(x b) Any }
+
+
+func foo(type a)(x a) BoxIface(a) {
+    return x.(BoxIface(a))
+}
+
+func (this Box) m1(x Iface) Any {
+    return x
+}
+
+func (this Box) m2(x Iface) Any {
+    return x
+}
+
+func main() {
+    var _ = foo(Iface)(Box{42})
+}

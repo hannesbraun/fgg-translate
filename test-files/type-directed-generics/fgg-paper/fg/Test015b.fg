@@ -1,0 +1,7 @@
+/// TEST TYPECHECK_BAD: A is not a subtype of IA
+
+package main;
+type IA interface { m0() A };
+type A struct {};
+func (x0 A) m1(x1 IA) A { return x0 };
+func main() { _ = A{}.m1(A{}) }

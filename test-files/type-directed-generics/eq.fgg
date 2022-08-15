@@ -1,0 +1,39 @@
+/// TEST EVAL_GOOD: '(tuple-2 (Kt-Triple (tuple-3 Kt-bool Kt-bool Kt-bool)) (tuple-3 #t #t #f))
+package main;
+
+import "fmt";
+
+type Triple(type a, b, c) struct { fst a snd b thd c }
+type EQ(type a EQ(a)) interface {
+    Equal(x a) bool
+}
+
+func (this int) Equal(other int) bool { return this == other }
+
+// It doesn't matter whether there is a bound on the type parameter of the Box
+// struct.
+// type Box(type a EQ(a)) struct { content a };
+type Box(type a Any) struct { content a };
+
+func (this Box(type a EQ(a))) Equal(other Box(a)) bool {
+    return this.content.Equal(other.content)
+}
+
+func foo(type a EQ(a))(box Box(a)) bool {
+    return box.content.Equal(box.content)
+};
+
+func bar(type a EQ(a))(box Box(a), x a) bool {
+    return x.Equal(box.content)
+};
+
+func spam(box Box(int)) bool {
+    return box.content.Equal(0)
+};
+
+func main() {
+    var x1 = foo(Box(int))(Box(Box(int)){Box(int){1}})
+    var x2 = bar(int)(Box(int){1}, 1)
+    var x3 = spam(Box(int){1})
+    var _ = Triple(bool, bool, bool){x1, x2, x3}
+}

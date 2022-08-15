@@ -1,0 +1,9 @@
+/// TEST TYPECHECK_BAD: Cannot instantiate method m1 for struct A with type arguments (): arity mismatch
+
+package main;
+type Any(type ) interface {};
+type IA(type ) interface { m1(type a IA())() A() };
+type A(type ) struct {};
+func (x0 A(type )) m1(type a IA())() A() { return x0 };
+type A1(type ) struct {};
+func main() { _ = A(){}.m1()() }

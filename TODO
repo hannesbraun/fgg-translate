@@ -1,0 +1,18 @@
+* Implement C backend
+  * Simple optimization: empty list of type variables are completely ignored
+* Implement monomorphization
+* Implement pretty printer FGG->Go (crashes if type variables are found)
+
+We then have:
+
+FGG--------> C (polymorphic)
+ |
+ |
+ +---------> C (monomorphic)
+ |
+ |
+ +---------> Go (monomorphic)
+
+* Benchmarks:
+  * Lookup in binary search tree
+  * Simple hash table

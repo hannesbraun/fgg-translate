@@ -1,0 +1,7 @@
+/// TEST TYPECHECK_BAD: Duplicate method declaration for receiver A and method m
+
+package main;
+type A struct {};
+func (x0 A) m() A { return x0 };
+func (x0 A) m() A { return x0 };
+func main() { _ = A{} }

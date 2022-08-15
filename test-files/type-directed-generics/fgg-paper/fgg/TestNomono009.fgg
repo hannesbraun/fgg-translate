@@ -1,0 +1,17 @@
+/// TEST TYPECHECK_GOOD
+
+package main;
+type Any(type ) interface {};
+type IA(type ) interface { ma1(type )() Any() };
+type A(type ) struct {};
+func (x0 A(type )) ma1(type )() Any() { return B(){}.mb1()() };
+func (x0 A(type )) ma2(type )() Any() { return B(){}.mb3()() };
+type B(type ) struct {};
+func (x0 B(type )) mb1(type )() Any() { return x0 };
+func (x0 B(type )) mb2(type )() Any() { return x0.mb2()() };
+func (x0 B(type )) mb3(type )() Any() { return A(){}.ma2()() };
+type C(type ) struct {};
+func (x0 C(type )) ma1(type )() Any() { return x0 };
+type D(type ) struct {};
+func (x0 D(type )) foo(type )(x IA()) Any() { return x.ma1()() };
+func main() { _ = A(){}.ma1()() }

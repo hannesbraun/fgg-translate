@@ -1,0 +1,11 @@
+/// TEST TYPECHECK_BAD: A1 is not a subtype of A
+
+package main;
+type Any(type ) interface {};
+type IA(type ) interface { m1(type a IA())() IA() };
+type A(type ) struct {};
+func (x0 A(type )) m1(type a IA())() IA() { return x0 };
+type A1(type ) struct {};
+type B(type a IA()) struct {};
+func (x0 B(type a IA())) m2(type )(x1 a) B(a) { return x0 };
+func main() { _ = B(A()){}.m2()(A1(){}) }

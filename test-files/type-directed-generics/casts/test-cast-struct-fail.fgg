@@ -1,0 +1,8 @@
+/// TEST EVAL_BAD: ERROR: cannot cast value (tuple-2 Kt-A tuple-0) to runtime type Kt-B
+
+package main;
+type ToAny struct { any Any };
+type A struct {};
+type B struct {};
+func m(type b Any)() b { return ToAny{A{}}.any.(b) };
+func main() { _ = m(B)() }

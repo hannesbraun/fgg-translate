@@ -1,0 +1,31 @@
+/// TEST TYPECHECK_BAD: Cannot instantiate function foo with type arguments (EQ(int)): bound mismatch: EQ(int) is not a subtype of EQ(EQ(int))
+
+type EQ(type a EQ(a)) interface {
+    Equal(x a) bool
+}
+
+type Box(type a) struct { f a }
+
+func (this int) Equal(x int) bool { return this == x }
+
+func (this Box(type a EQ(a))) Equal(x Box(a)) bool {
+    return this.f.Equal(x.f)
+}
+
+func foo(type a EQ(a))(box1 Box(a), box2 Box(a)) bool {
+    return box1.Equal()(box2)
+}
+
+func bar(type a EQ(a))(box Box(a), x a) bool {
+    return x.Equal()(box.f)
+}
+
+func spam(box Box(int)) bool {
+    return box.f.Equal()(42)
+}
+
+func main() {
+    // The following does not typecheck because it would require
+    // EQ(int) <: EQ(EQ(int)) to hold.
+    foo(EQ(int))(Box(int){1}, Box(int){2})
+}

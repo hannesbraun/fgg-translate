@@ -1,0 +1,85 @@
+name:                gotrans
+description:         Translation from Featherweight (Generic) Go to various target languages
+version:             0.1.0.0
+license:             BSD3
+author:              Anonymous
+
+dependencies:
+  - base >= 4.7 && < 5
+  - syb >= 0.7
+  - raw-strings-qq >= 1.1
+  - process >= 1.6
+  - unix
+  - regex-tdfa
+  - regex-base
+  - groom
+  - dlist
+
+extra-source-files:
+  - README.md
+  - gotrans
+  - package.yaml
+  - stack.yaml
+  - test-files/**/*.go
+  - test-files/**/*.hs
+
+library:
+  source-dirs: src
+  ghc-options:
+    - -Werror -W -fwarn-unused-imports -fwarn-unused-binds
+    - -fwarn-unused-matches -fwarn-unused-do-bind -fwarn-wrong-do-bind
+    - -fwarn-missing-signatures -fno-warn-partial-type-signatures
+    - -Wredundant-constraints
+  dependencies:
+  - HTF
+  - containers
+  - directory
+  - extra
+  - filepath
+  - mtl
+  - optparse-applicative
+  - parsec
+  - prettyprinter
+  - safe
+  - text
+  - time
+
+executables:
+  gotrans:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -Werror -W -fwarn-unused-imports -fwarn-unused-binds
+    - -fwarn-unused-matches -fwarn-unused-do-bind -fwarn-wrong-do-bind
+    - -fwarn-missing-signatures -fno-warn-partial-type-signatures
+    - -Wredundant-constraints
+    dependencies:
+    - gotrans
+    when:
+    - condition: false
+      other-modules: Paths_gotrans
+
+tests:
+  go-types-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -Werror -W -fwarn-unused-imports -fwarn-unused-binds
+    - -fwarn-unused-matches -fwarn-unused-do-bind -fwarn-wrong-do-bind
+    - -fwarn-missing-signatures -fno-warn-partial-type-signatures
+    - -Wredundant-constraints
+    dependencies:
+    - HTF
+    - filepath
+    - gotrans
+    - process
+    - text
+    when:
+    - condition: false
+      other-modules: Paths_gotrans

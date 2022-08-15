@@ -1,0 +1,8 @@
+/// TEST TYPECHECK_GOOD
+
+package main;
+type IA(type ) interface { m1(type a IA())() IA() };
+type ToIA(type ) struct { upcast IA() };
+type A(type ) struct {};
+func (x0 A(type )) m1(type a IA())() IA() { return x0 };
+func main() { _ = ToIA(){A(){}}.upcast.(A()) }

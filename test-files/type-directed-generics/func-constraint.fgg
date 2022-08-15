@@ -1,0 +1,30 @@
+/// TEST EVAL_GOOD: '(tuple-2 Kt-Result (tuple-2 1 2))
+type Box(type a) struct { content a }
+
+type I interface {
+    foo() int
+}
+
+func (this int) foo() int {
+    return this
+}
+
+type J interface {
+    bar() int
+}
+
+func (this Box(type a I)) bar() int {
+     return this.content.foo()
+}
+
+func doWork(x Any) int {
+    return x.(Box(int)).bar()
+}
+
+type Result struct {x1 int x2 int}
+
+func main() {
+    var x1 = Box(int){1}.bar()
+    var x2 = doWork(Box(int){2})
+    var _ = Result{x1, x2}
+}

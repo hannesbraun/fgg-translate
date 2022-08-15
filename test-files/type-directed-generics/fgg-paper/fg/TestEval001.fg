@@ -1,0 +1,6 @@
+/// TEST EVAL_GOOD: '(tuple-2 Kt-A tuple-0)
+
+package main;
+type A struct {};
+type B struct { f A };
+func main() { _ = B{A{}}.f }

@@ -1,0 +1,5 @@
+/// TEST TYPECHECK_BAD: Invalid number of arguments for construction of struct A
+
+package main;
+type A struct {};
+func main() { _ = A{A{}} }

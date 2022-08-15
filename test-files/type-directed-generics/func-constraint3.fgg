@@ -1,0 +1,35 @@
+/// TEST EVAL_GOOD: '(tuple-2 Kt-Pair (tuple-2 (tuple-2 Kt-IntBox (tuple-1 3)) 42))
+
+type Box(type a) struct { content a }
+type Empty struct {}
+type Pair struct { fst IntBox; snd int }
+type IntBox struct { f int }
+
+type I interface {
+    foo() int
+}
+
+func (this Empty) foo() int {
+    return 42
+}
+func (this IntBox) foo() int {
+    return this.f + 1
+}
+
+type J interface {
+    bar(x Any) Any
+}
+
+func (this Box(type a)) bar(z Any) Any {
+    return z.(a)
+}
+
+func doWork(x Any, y Any) Any {
+    return x.(J).bar(y)
+}
+
+func main() {
+    var x1 = doWork(Box(IntBox){IntBox{2}}, IntBox{3})
+    var x2 = doWork(Box(I){IntBox{2}}, Empty{})
+    var _ = Pair{x1.(IntBox), x2.(I).foo()}
+}

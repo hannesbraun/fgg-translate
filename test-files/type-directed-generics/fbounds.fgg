@@ -1,0 +1,52 @@
+/// TEST EVAL_GOOD: '(tuple-2 Kt-Tuple12 (tuple-12 #f #t #f #t #f #t #f #t #f #t #f #t))
+
+type EQ(type a EQ(a)) interface {
+    Equal(x a) bool
+}
+
+type Box(type a) struct { f a }
+
+func (this int) Equal(x int) bool { return this == x }
+
+func (this Box(type a EQ(a))) Equal(x Box(a)) bool {
+    return this.f.Equal(x.f)
+}
+
+func foo(type a EQ(a))(box1 Box(a), box2 Box(a)) bool {
+    return box1.Equal()(box2)
+}
+
+func bar(type a EQ(a))(box Box(a), x a) bool {
+    return x.Equal()(box.f)
+}
+
+func spam(box Box(int)) bool {
+    return box.f.Equal()(42)
+}
+
+type Tuple12 struct {x1 bool x2 bool x3 bool x4 bool x5 bool x6 bool x7 bool x8 bool x9 bool x10 bool x11 bool x12 bool}
+
+func main() {
+    var x1 = foo(int)(Box(int){1}, Box(int){2}) // false
+    var x2 = foo(int)(Box(int){1}, Box(int){1}) // true
+
+    var x3 = foo(Box(int))(Box(Box(int)){Box(int){1}}, Box(Box(int)){Box(int){2}}) // false
+    var x4 = foo(Box(int))(Box(Box(int)){Box(int){1}}, Box(Box(int)){Box(int){1}}) // true
+
+    var x5 = bar(int)(Box(int){1}, 2) // false
+    var x6 = bar(int)(Box(int){1}, 1) // true
+
+    var x7 = bar(Box(int))(Box(Box(int)){Box(int){1}}, Box(int){2}) // false
+    var x8 = bar(Box(int))(Box(Box(int)){Box(int){1}}, Box(int){1}) // true
+
+    var x9 = bar(Box(Box(int)))(Box(Box(Box(int))){Box(Box(int)){Box(int){1}}}, Box(Box(int)){Box(int){2}}) // false
+    var x10 = bar(Box(Box(int)))(Box(Box(Box(int))){Box(Box(int)){Box(int){1}}}, Box(Box(int)){Box(int){1}}) // true
+
+    var x11 = spam(Box(int){1})  // false
+    var x12 = spam(Box(int){42}) // true
+
+    var _ = Tuple12{x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12}
+    // The following does not typecheck because it would require
+    // EQ(int) <: EQ(EQ(int)) to hold.
+    // foo(EQ(int))(Box(int){1}, Box(int){2}) // false
+}

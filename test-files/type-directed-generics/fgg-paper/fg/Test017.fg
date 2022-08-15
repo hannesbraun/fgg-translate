@@ -1,0 +1,6 @@
+/// TEST EVAL_GOOD: '(tuple-2 Kt-ToAny (tuple-1 (tuple-3 (-sig ()) 1 ())))
+
+package main;
+type Any interface {};
+type ToAny struct { any Any };
+func main() { _ = ToAny{1} }

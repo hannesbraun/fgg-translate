@@ -1,0 +1,6 @@
+/// TEST TYPECHECK_BAD: Unbound variable foo
+
+package main;
+type A struct {};
+func (x0 A) m1() A { return foo };
+func main() { _ = A{} }

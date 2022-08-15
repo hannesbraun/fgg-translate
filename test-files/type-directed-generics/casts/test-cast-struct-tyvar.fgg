@@ -1,0 +1,15 @@
+/// TEST EVAL_GOOD: 42
+
+type I1 interface { foo() int }
+type S struct {}
+
+// S <: I1
+func (this S) foo() int { return 42 }
+
+func doWork(type a)(x S) a {
+    return x.(a)
+}
+
+func main() {
+    _ = doWork(I1)(S{}).foo()
+}

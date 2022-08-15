@@ -1,0 +1,11 @@
+#!/bin/bash
+
+THIS=$(cd $(dirname $0) && pwd -P)
+pushd "$THIS" > /dev/null
+exe=$(stack exec which gotrans)
+if [ -z "$exe" ]; then
+    echo "No gotrans binary found. Please invoke './build' in directory $THIS before running this script."
+    exit 1
+fi
+popd > /dev/null
+"$exe" "$@"

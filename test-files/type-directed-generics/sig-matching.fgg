@@ -1,0 +1,34 @@
+/// TEST EVAL_GOOD: 42
+
+type Box(type a) struct { f a }
+
+func (this int) bar() bool { return true }
+
+type J interface {
+    bar() bool
+}
+
+type I(type a) interface {
+    foo(type b J)(x Box(a), y Box(b)) int
+}
+
+// Box(T) <: I(Box(T))
+// Box(Box(T)) <: I(Box(Box(T)))
+func (this Box(type a)) foo(type b J)(x Box(Box(a)), y Box(b)) int {
+    return 42
+}
+
+func invokeFoo(type a)(x Any, y a) int {
+    return x.(I(a)).foo(int)(Box(a){y}, Box(int){1})
+}
+
+func main() {
+    var b = Box(int){5}
+    // works. Calls foo with
+    // a = Box(int)
+    // this = (I(Box(int)), Box{5}, ...)
+    // b = int
+    // x = (Box(Box(int)), Box{Box{5}})
+    // y = (Box(int), Box{42})
+    var _ = invokeFoo(Box(int))(b, b)
+}

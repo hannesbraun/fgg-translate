@@ -1,0 +1,5 @@
+/// TEST TYPECHECK_BAD: No implementation of method m1 for struct A
+
+package main;
+type A struct {};
+func main() { _ = A{}.m1() }

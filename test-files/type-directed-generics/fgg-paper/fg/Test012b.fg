@@ -1,0 +1,6 @@
+/// TEST TYPECHECK_BAD: Unknown field f1 for struct B
+
+package main;
+type A struct {};
+type B struct { f A };
+func main() { _ = B{A{}}.f1 }

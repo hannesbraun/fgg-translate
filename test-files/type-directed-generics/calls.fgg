@@ -1,0 +1,48 @@
+/// TEST EVAL_GOOD: 755
+
+type I1 interface { m1() int }
+type I2 interface { m2() int }
+type Sub interface { m1() int m2() int }
+type SubSub interface { m3() int m2() int m1() int }
+type SubSub2 interface { m1() int m2() int m3() int }
+
+func (this int) m1() int {
+    return this + 1
+}
+
+func (this int) m2() int {
+    return this + 2
+}
+
+func (this int) m3() int {
+    return this + 3
+}
+
+func foo(type a Sub)(x a) int {
+    return x.m1() + x.m2()
+}
+
+func spam(type a SubSub)(x a) int {
+    return foo(a)(x) + x.m3() // instantiate tyvar with another tyvar
+}
+
+func spam2(type a SubSub2)(x a) int {
+    return spam(a)(x)
+}
+
+func egg(x SubSub) int {
+    return foo(Sub)(x) + x.m3() // instantiate tyvar with interface
+}
+
+func egg2(x SubSub2) int {
+    return egg(x)
+}
+
+func main() {
+    var x1 = foo(int)(4) // instantiate tyvar with struct. Result: 11
+    var x21 = spam(int)(20) // Result: 66
+    var x22 = spam2(int)(20) // Result: 66
+    var x31 = egg(100) // Result: 306
+    var x32 = egg2(100) // Result: 306
+    var _ = x1 + x21 + x22 + x31 + x32 // Result: 755
+}

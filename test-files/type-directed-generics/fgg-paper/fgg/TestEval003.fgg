@@ -1,0 +1,6 @@
+/// TEST EVAL_GOOD: 0
+
+package main;
+import "fmt";
+type A(type ) struct {};
+func main() { _ = fmt.Sprintf("%v ,_()+- %v", A(){}, A(){}) }

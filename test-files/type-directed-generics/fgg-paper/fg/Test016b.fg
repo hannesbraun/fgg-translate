@@ -1,0 +1,5 @@
+/// TEST TYPECHECK_BAD: Assertion A{}.(A) is not necessary because A{} already has type A
+
+package main;
+type A struct {};
+func main() { _ = A{}.(A) }

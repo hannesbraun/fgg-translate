@@ -1,0 +1,9 @@
+/// TEST EVAL_BAD: ERROR: no method implementation for (tuple-2 Kt-A (Km-foo (tuple-2 tuple-0 (tuple-1 Kt-A))))
+
+package main;
+type I interface { foo() A };
+type ToAny struct { any Any };
+type A struct {};
+type B struct {};
+func m(type b Any)() b { return ToAny{A{}}.any.(b) };
+func main() { _ = m(I)() }

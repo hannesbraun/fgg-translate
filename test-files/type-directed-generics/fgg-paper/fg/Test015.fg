@@ -1,0 +1,8 @@
+/// TEST TYPECHECK_GOOD
+
+package main;
+type Any interface {};
+type A struct {};
+func (x0 A) m1(x1 Any) Any { return B{x0} };
+type B struct { f A };
+func main() { _ = A{}.m1(B{A{}}) }

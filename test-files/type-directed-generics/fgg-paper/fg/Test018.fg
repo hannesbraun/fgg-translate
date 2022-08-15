@@ -1,0 +1,6 @@
+/// TEST TYPECHECK_BAD: Duplicate declaration for A
+
+package main;
+type A struct {};
+type A struct {};
+func main() { _ = A{} }

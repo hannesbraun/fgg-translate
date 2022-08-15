@@ -1,0 +1,20 @@
+/// TEST EVAL_BAD: ERROR: Cannot cast value (tuple-3 (-sig ()) (tuple-2 (Kt-Box (tuple-1 Kt-int)) (tuple-1 0)) ()) to struct type Box(b) with runtime type (Kt-Box (tuple-1 Kt-bool))
+
+type Box(type a) struct { content a };
+
+func toAny(type a Any)(x a) Any {
+    return x
+}
+
+func foo(type a Any, b Any)(x a) Box(b) {
+    return toAny(a)(x).(Box(b))
+};
+
+func main() {
+    // This example demonstrates that you must represent a type variable by
+    // (a) the runtime representation of the concrete type that is used for
+    // the variable and (b) the dictionary for its bound
+
+    // FAILS
+    var _ = foo(Box(int), bool)(Box(int){0})
+}

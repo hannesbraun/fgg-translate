@@ -1,0 +1,7 @@
+/// TEST TYPECHECK_GOOD
+
+package main;
+type Any interface {};
+type A struct {};
+func (x0 A) m1() Any { return x0 };
+func main() { _ = A{} }

@@ -1,0 +1,4 @@
+/// TEST TYPECHECK_BAD: Unbound type variable A
+
+package main;
+func main() { _ = A{} }

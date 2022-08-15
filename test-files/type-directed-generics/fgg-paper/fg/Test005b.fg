@@ -1,0 +1,6 @@
+/// TEST TYPECHECK_GOOD
+
+package main;
+type A struct {};
+func (x0 A) m1() A { return A{} };
+func main() { _ = A{} }

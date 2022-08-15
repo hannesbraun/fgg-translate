@@ -1,0 +1,19 @@
+/// TEST EVAL_GOOD: '(tuple-2 (Kt-Box (tuple-1 Kt-int)) (tuple-1 42))
+
+type I1 interface { foo() I2 }
+type I2 interface { bar() int }
+
+// Box(a) <: I1 but only of a <: I2
+type Box(type a) struct { content a }
+func (this Box(type a I2)) foo() I2 { return this.content }
+
+// int <: I2
+func (this int) bar() int { return this }
+
+func doWork(type a)(x Box(a)) I1 {
+    return x.(I1)
+}
+
+func main() {
+    _ = doWork(int)(Box(int){42}).(Box(int))
+}

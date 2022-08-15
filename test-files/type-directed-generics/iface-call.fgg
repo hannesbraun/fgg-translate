@@ -1,0 +1,19 @@
+/// TEST EVAL_GOOD: 2
+
+type Box struct { content int }
+
+type J interface {
+    bar() int
+}
+
+func (this Box) bar() int {
+     return this.content
+}
+
+func doWork(x J) int {
+    return x.bar()
+}
+
+func main() {
+    var _ = doWork(Box{2})
+}

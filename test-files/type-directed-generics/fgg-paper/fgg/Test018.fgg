@@ -1,0 +1,10 @@
+/// TEST TYPECHECK_BAD: Duplicate method declaration for receiver A and method m
+
+package main;
+type I1(type ) interface { foo(type )() Any() };
+type I2(type ) interface { bar(type )() Any() };
+type A(type a Any()) struct { };
+func (x0 A(type a I1())) m(type )() Any() { return x0 };
+func (x0 A(type a I2())) m(type )() Any() { return x0 };
+type D(type ) struct { };
+func main() { _ = A(D()){} }

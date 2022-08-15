@@ -1,0 +1,33 @@
+/// TEST EVAL_BAD: ERROR: found implementation of method Km-foo for struct Kt-Box with signature (tuple-2 (tuple-1 Kt-J) (tuple-3 (Kt-Box (tuple-1 (Kt-Box (tuple-1 (Kt-Box (tuple-1 Kt-int)))))) (Kt-Box (tuple-1 Ki-1)) Kt-int))  but this does not match required signature (tuple-2 (tuple-1 Kt-J) (tuple-3 (Kt-Box (tuple-1 (Kt-Box (tuple-1 Kt-int)))) (Kt-Box (tuple-1 Ki-1)) Kt-int))
+
+type Box(type a) struct { f a }
+
+func (this int) bar() bool { return true }
+
+type J interface {
+    bar() bool
+}
+
+type I(type a) interface {
+    foo(type b J)(x Box(a), y Box(b)) int
+}
+
+// Box(T) <: I(Box(T))
+// Box(Box(T)) <: I(Box(Box(T)))
+func (this Box(type a)) foo(type b J)(x Box(Box(a)), y Box(b)) int {
+    return 42
+}
+
+func invokeFoo(type a)(x Any, y a) int {
+    return x.(I(a)).foo(int)(Box(a){y}, Box(int){1})
+}
+
+func main() {
+    var b = Box(int){5}
+    // type assertion fails at runtime
+    // Reason: Box(Box(int) implements foo with signature
+    // (type b J)(x Box(Box(Box(int))), y Box(b)) int
+    // required would be
+    // (type b J)(x Box(Box(int)), y Box(b)) int
+    var _ = invokeFoo(Box(int))(Box(Box(int)){b}, b)
+}
