@@ -12,7 +12,7 @@ data BinOp = Plus | Minus | Mult | Div | Mod
            | And | Or
              deriving (Eq, Ord, Show, Data, Typeable)
 
-data UnOp = Not
+data UnOp = Not | Inv
              deriving (Eq, Ord, Show, Data, Typeable)
 
 data TraceFlag = TraceOn | TraceOff

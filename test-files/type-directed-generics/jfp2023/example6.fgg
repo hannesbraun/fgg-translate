@@ -1,0 +1,28 @@
+/// TEST EVAL_GOOD:
+// Figure 2
+package main
+
+import "fmt"
+
+func intToString(i int) string {
+    return fmt.Sprintf("%v", i)
+}
+type Num    struct { val int }
+type Format interface { format() string }
+
+func (this Num) format() string { return intToString(this.val) }
+
+func formatSome(x Format) string { return x.format() }
+
+
+type Any interface {}
+type Pair[T Any, U Any] struct { left T; right U }
+
+func (this Pair[T Format, U Format]) format() string {
+  return fmt.Sprintf("(%v,%v)", this.left.format(), this.right.format())
+}
+
+func main() {
+  var p  Pair[Num, Num] = Pair[Num, Num]{ Num{1}, Num{2} }
+  var s1 string = p.format()
+}

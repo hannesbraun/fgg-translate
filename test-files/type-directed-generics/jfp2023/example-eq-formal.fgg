@@ -1,0 +1,25 @@
+/// TEST EVAL_GOOD: #f
+// Figure 13
+package main
+
+import "fmt"
+
+func intToString(i int) string {
+    return fmt.Sprintf("%v", i)
+}
+type Any interface {}
+type Num struct { val int }
+
+type Box[Alpha Any] struct { content Alpha }
+type Eq[Alpha Any] interface { eq(that Alpha) bool }
+
+func (this Num) eq(that Num) bool { return this.val == that.val }
+
+func (this Box[Alpha Eq[Alpha]]) eq(that Box[Alpha]) bool {
+  return this.content.eq(that.content)
+}
+
+func main() {
+  var x = Box[Num]{Num{1}}.eq(Box[Num]{Num{2}})
+  fmt.Printf("%v", x)
+}

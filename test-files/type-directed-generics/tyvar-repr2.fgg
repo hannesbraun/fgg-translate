@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: '(tuple-3 (-sig ((Km-m2 (tuple-2 tuple-0 (tuple-2 Kt-Iface Kt-Any))))) (tuple-2 Kt-Box (tuple-1 (tuple-3 (-sig ()) 42 ()))) (#<procedure>))
+/// TEST EVAL_GOOD:  (tuple-2 Kt-Box (tuple-1 42))
 
 // 2021-11-12: This example demonstrates a bug in the translation detected
 // while proving semantic preservation.
@@ -54,5 +54,6 @@ func (this Box) m2(x Iface) Any {
 }
 
 func main() {
-    var _ = foo(Iface)(Box{42})
+    var x = foo(Iface)(Box{42})
+    fmt.Printf("%v", x)
 }

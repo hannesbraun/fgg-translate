@@ -1,10 +1,8 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.35.2.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: f8e80b8ec63e4565b012f5066c4a9ef8b8f13fd4d4f6a385099161c9648af02c
 
 name:           gotrans
 version:        0.1.0.0
@@ -37,32 +35,6 @@ extra-source-files:
     test-files/haskell-syntax-directed/simple-structural/Example.go
     test-files/haskell-syntax-directed/structs/Example.go
     test-files/haskell-syntax-directed/typedefs/Example.go
-    test-files/haskell-syntax-directed/builtin-types/Example.hs
-    test-files/haskell-syntax-directed/builtin-types/Example_NoCasts.hs
-    test-files/haskell-syntax-directed/casts/Example.hs
-    test-files/haskell-syntax-directed/casts/Fail1.hs
-    test-files/haskell-syntax-directed/casts/Fail2.hs
-    test-files/haskell-syntax-directed/casts/Fail3.hs
-    test-files/haskell-syntax-directed/casts/Fail4.hs
-    test-files/haskell-syntax-directed/casts/Fail5.hs
-    test-files/haskell-syntax-directed/iface-call/Example.hs
-    test-files/haskell-syntax-directed/iface-call/Example_NoCasts.hs
-    test-files/haskell-syntax-directed/iface-field/Example.hs
-    test-files/haskell-syntax-directed/iface-field/Example_NoCasts.hs
-    test-files/haskell-syntax-directed/recursive-interfaces-1/Example.hs
-    test-files/haskell-syntax-directed/recursive-interfaces-1/Example_NoCasts.hs
-    test-files/haskell-syntax-directed/recursive-interfaces-2/Example.hs
-    test-files/haskell-syntax-directed/recursive-interfaces-2/Example_NoCasts.hs
-    test-files/haskell-syntax-directed/recursive-interfaces-3/Example.hs
-    test-files/haskell-syntax-directed/recursive-interfaces-3/Example_NoCasts.hs
-    test-files/haskell-syntax-directed/recursive-interfaces-4/Example.hs
-    test-files/haskell-syntax-directed/recursive-interfaces-4/Example_NoCasts.hs
-    test-files/haskell-syntax-directed/same-name-multiple-types/Example.hs
-    test-files/haskell-syntax-directed/same-name-multiple-types/Example_NoCasts.hs
-    test-files/haskell-syntax-directed/simple-structural/Example.hs
-    test-files/haskell-syntax-directed/simple-structural/Example_NoCasts.hs
-    test-files/haskell-syntax-directed/structs/Example.hs
-    test-files/haskell-syntax-directed/typedefs/Example.hs
 
 library
   exposed-modules:
@@ -85,9 +57,21 @@ library
       TypeDirectedGeneric.C
       TypeDirectedGeneric.CPretty
       TypeDirectedGeneric.SExp
-      TypeDirectedGeneric.TargetLanguage
+      TypeDirectedGeneric.SMLSharpTypedLambda.Language
+      TypeDirectedGeneric.SMLSharpTypedLambda.Translation
+      TypeDirectedGeneric.SystemF
+      TypeDirectedGeneric.SystemF.Erasure
+      TypeDirectedGeneric.SystemF.Interpreter
+      TypeDirectedGeneric.SystemF.Parser
+      TypeDirectedGeneric.SystemF.Pretty
+      TypeDirectedGeneric.SystemF.Syntax
+      TypeDirectedGeneric.SystemF.Tests
+      TypeDirectedGeneric.SystemF.TopLevelTranslation
+      TypeDirectedGeneric.SystemF.Translation
+      TypeDirectedGeneric.SystemF.Typechecker
       TypeDirectedGeneric.TransCommon
       TypeDirectedGeneric.Translation
+      TypeDirectedGeneric.UntypedTargetLanguage
   other-modules:
       Paths_gotrans
   hs-source-dirs:
@@ -95,7 +79,10 @@ library
   ghc-options: -Werror -W -fwarn-unused-imports -fwarn-unused-binds -fwarn-unused-matches -fwarn-unused-do-bind -fwarn-wrong-do-bind -fwarn-missing-signatures -fno-warn-partial-type-signatures -Wredundant-constraints
   build-depends:
       HTF
+    , aeson
+    , aeson-pretty
     , base >=4.7 && <5
+    , bytestring
     , containers
     , directory
     , dlist

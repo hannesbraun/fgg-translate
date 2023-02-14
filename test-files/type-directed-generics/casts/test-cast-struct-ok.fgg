@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: '(tuple-2 Kt-C tuple-0)
+/// TEST EVAL_GOOD: (tuple-2 Kt-C tuple-0)
 
 package main;
 type ToAny struct { any Any };
@@ -6,4 +6,7 @@ type A struct { content C };
 type B struct {};
 type C struct {};
 func m(type b Any)() b { return ToAny{A{C{}}}.any.(b) };
-func main() { _ = m(A)().content } // evaluates to C{}
+func main() {
+  var x = m(A)().content // evaluates to C{}
+  fmt.Printf("%v", x)
+}

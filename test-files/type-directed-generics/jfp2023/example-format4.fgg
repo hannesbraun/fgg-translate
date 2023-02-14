@@ -1,0 +1,42 @@
+/// TEST EVAL_GOOD: 1
+// Figure 4
+package main
+
+import "fmt"
+
+func intToString(i int) string {
+    return fmt.Sprintf("%v", i)
+}
+type Num    struct { val int }
+type Format interface { format() string }
+type Pretty interface { format() string; pretty() string }
+
+func (this Num) format() string { return intToString(this.val) }
+func (this Num) pretty() string { return this.format() }
+
+func formatSome(x Format) string { return x.format() }
+
+func main() {
+  var s1 string = formatSome(Num{1})
+  var pr Pretty = Num{2}
+  var s2 string = formatSome(pr)
+}
+
+type FPair[T Format, U Format] struct { left T; right U }
+type Factory[T Format] interface { create() FPair[T, T] }
+
+type MyFactory struct {}
+func (this MyFactory) create() FPair[Num, Num] {
+  return FPair[Num, Num]{Num{1}, Num{2}}
+}
+
+func doWork[T Format](factory Factory[T]) string {
+  var p FPair[T, T] = factory.create()
+  var t T = p.left
+  return t.format()
+}
+
+func main4() {
+  var s = doWork[Num](MyFactory{})
+  fmt.Printf("%v", s)
+}

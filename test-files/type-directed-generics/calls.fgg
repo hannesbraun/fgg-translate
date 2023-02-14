@@ -44,5 +44,6 @@ func main() {
     var x22 = spam2(int)(20) // Result: 66
     var x31 = egg(100) // Result: 306
     var x32 = egg2(100) // Result: 306
-    var _ = x1 + x21 + x22 + x31 + x32 // Result: 755
+    var y = x1 + x21 + x22 + x31 + x32 // Result: 755
+    fmt.Printf("%v", y)
 }

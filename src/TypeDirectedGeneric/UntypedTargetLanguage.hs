@@ -3,11 +3,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
-module TypeDirectedGeneric.TargetLanguage (
+module TypeDirectedGeneric.UntypedTargetLanguage (
 
     Var(..), Constr(..), PatClause(..), Pat(..), Binding(..), Prog(..)
-  , Exp(ExpVar, ExpConstr, ExpCase, ExpBinOp, ExpUnOp, ExpCond, ExpInt,
-       ExpBool, ExpStr, ExpChar, ExpFail, ExpList)
+  , Exp(..)
   , expApp, expAppMany, expAbs, expAbsMany
   , evalProg, pairConstr, mkPair, tupleConstr, mkTuple, tuplePat, matchEq, matchEqFull
   , fstOfPair, sndOfPair, fstOfTriple, sndOfTriple, thdOfTriple, mkTriple, idFun, toString
@@ -56,6 +55,7 @@ data Exp
     | ExpStr T.Text
     | ExpChar Char
     | ExpFail T.Text [Exp]
+    | ExpVoid
     deriving (Eq, Ord, Show, Data, Typeable)
 
 expApp :: Exp -> Exp -> Exp
@@ -116,6 +116,7 @@ expToSExp exp =
     ExpStr t -> SExpStr t
     ExpChar c -> SExpChar c
     ExpFail t args -> SExp ([error, SExpSym "ERROR", SExpStr t] ++ map expToSExp args)
+    ExpVoid -> SExp [SExpVar "void"]
   where
     clauseToSExp (PatClause p e) = SExp [patToSExp p, expToSExp e]
     patToSExp p =
@@ -157,6 +158,7 @@ expToSExp exp =
         SExpVar $
         case op of
           Not -> "not"
+          Inv -> "-"
 
 bindingToSExp :: Binding -> SExp
 bindingToSExp (Binding (Var v) pats body) =
@@ -346,6 +348,7 @@ precUnOp :: UnOp -> Int
 precUnOp op =
     case op of
       Not -> funAppPrec
+      Inv -> funAppPrec
 
 instance Pretty Var where
   pretty (Var v) = text v
@@ -407,6 +410,7 @@ instance PrettyPrec Exp where
         withParens prec funAppPrec $
         text "error" <+> pretty (show s) <+>
         sepBy space (map (prettyPrec funAppPrec) args)
+      ExpVoid -> text "void"
 
 instance Pretty Pat where
   pretty = prettyPrec 0
@@ -429,3 +433,4 @@ instance Pretty PatClause where
 
 instance Pretty UnOp where
     pretty Not = "not"
+    pretty Inv = "-"

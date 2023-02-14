@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: '(tuple-2 (Kt-Box (tuple-1 Kt-int)) (tuple-1 42))
+/// TEST EVAL_GOOD: (tuple-2 (Kt-Box (tuple-1 Kt-int)) (tuple-1 42))
 
 type Box(type a) struct { content a }
 
@@ -7,5 +7,6 @@ func foo(type a)(x Box(a)) Box(int) {
 }
 
 func main() {
-    _ = foo(int)(Box(int){42})
+    var x = foo(int)(Box(int){42})
+    fmt.Printf("%v", x)
 }

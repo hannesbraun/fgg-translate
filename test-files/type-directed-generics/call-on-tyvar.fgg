@@ -12,5 +12,6 @@ func (this int) imethod() int { return this }
 func (this int) jmethod() bool { return true }
 
 func main() {
-    var _ = foo(J)(1)
+    var x = foo(J)(1)
+    fmt.Printf("%v", x)
 }

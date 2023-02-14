@@ -1,6 +1,6 @@
-/// TEST EVAL_GOOD: ""
+/// TEST EVAL_GOOD: xxx
 
 package main;
 import "fmt";
 type A(type ) struct {};
-func main() { _ = fmt.Sprintf("") }
+func main() { fmt.Printf("xxx") }

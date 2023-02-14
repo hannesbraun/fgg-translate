@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: '(tuple-2 Kt-Result (tuple-2 1 2))
+/// TEST EVAL_GOOD: (tuple-2 Kt-Result (tuple-2 1 2))
 type Box(type a) struct { content a }
 
 type I interface {
@@ -26,5 +26,5 @@ type Result struct {x1 int x2 int}
 func main() {
     var x1 = Box(int){1}.bar()
     var x2 = doWork(Box(int){2})
-    var _ = Result{x1, x2}
+    fmt.Printf("%v", Result{x1, x2})
 }

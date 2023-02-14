@@ -30,5 +30,6 @@ func main() {
     // b = int
     // x = (Box(Box(int)), Box{Box{5}})
     // y = (Box(int), Box{42})
-    var _ = invokeFoo(Box(int))(b, b)
+    var x = invokeFoo(Box(int))(b, b)
+    fmt.Printf("%v", x)
 }

@@ -7,6 +7,7 @@ import Common.Types
 import Common.Utils
 import qualified SyntaxDirected.Translation as S
 import qualified TypeDirectedGeneric.Translation as Tg
+import qualified TypeDirectedGeneric.SystemF.TopLevelTranslation as Sf
 
 import Data.Time.Clock
 import Options.Applicative
@@ -19,11 +20,11 @@ import qualified Control.Exception as E
 
 data Target
     = TargetParse | TargetParseGeneric | TargetSyntaxAST | TargetSyntax
-    | TargetType | TargetTypeGeneric
+    | TargetType | TargetTypeGeneric | TargetTypeSystemF | TargetSystemFInterpreter
             deriving (Show)
 
 targets :: String
-targets = "'parse', 'parse-generic', 'syntax', 'type', 'type-generic'"
+targets = "'parse', 'parse-generic', 'syntax', 'type', 'type-generic', 'type-systemf', 'interpret-systemf'"
 
 parseTarget :: ReadM Target
 parseTarget =
@@ -35,6 +36,8 @@ parseTarget =
           "syntax-ast" -> Right TargetSyntaxAST
           "type" -> Right TargetType
           "type-generic" -> Right TargetTypeGeneric
+          "type-systemf" -> Right TargetTypeSystemF
+          "interpret-systemf" -> Right TargetSystemFInterpreter
           _ -> Left ("Unknown target. Supported: " ++ targets)
 
 data Args
@@ -120,6 +123,21 @@ runTypeDirectedGeneric args = do
     goProg <- FggP.parseFile (a_inputFile args) parserCfg
     Tg.runTranslation (a_trace args) auto (a_inputFile args) goProg
 
+runTypeDirectedSystemF :: Args -> IO ()
+runTypeDirectedSystemF args = do
+  runTranslation args "type-directed translation with generics (System F with Racket backend)" ".rkt" (Comment ";;") $ \auto -> do
+    let parserCfg = FggP.ParserConfig (a_genericsSyntax args)
+    goProg <- FggP.parseFile (a_inputFile args) parserCfg
+    Sf.runTranslation (a_trace args) auto (a_inputFile args) goProg
+
+runSystemFInterpreter :: Args -> IO ()
+runSystemFInterpreter args = do
+    let parserCfg = FggP.ParserConfig (a_genericsSyntax args)
+    goProg <- FggP.parseFile (a_inputFile args) parserCfg
+    interpreterOutput <- Sf.runInterpretation (a_trace args) (a_inputFile args) goProg
+    interpreterOutput <- E.evaluate interpreterOutput
+    putStrLn $ T.unpack interpreterOutput
+
 driverRun :: Args -> IO ()
 driverRun args = do
   target <- getTarget
@@ -135,6 +153,8 @@ driverRun args = do
     TargetSyntaxAST -> runSyntaxDirectedAST args
     TargetType -> fail "type-directed translation not implemented yet"
     TargetTypeGeneric -> runTypeDirectedGeneric args
+    TargetTypeSystemF -> runTypeDirectedSystemF args
+    TargetSystemFInterpreter -> runSystemFInterpreter args
   where
     getTarget =
         case a_target args of

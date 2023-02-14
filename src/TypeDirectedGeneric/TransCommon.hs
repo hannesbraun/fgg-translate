@@ -14,6 +14,7 @@ import Common.FGGPretty ()
 import Prettyprinter
 
 import qualified Data.Set as Set
+import Data.Map.Merge.Strict (merge, preserveMissing, zipWithMatched)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import qualified Data.DList as DL
@@ -74,8 +75,9 @@ data MeDecl
     , me_tyName :: G.TyName
     , me_formals :: G.TyFormals
     , me_spec :: G.MeSpec
-    , me_exp :: G.Exp
+    , me_exp :: G.MeBody
     }
+  deriving Show
 
 data Iface
   = Iface
@@ -193,7 +195,7 @@ genFreshVars :: Int -> T [T.Text]
 genFreshVars n = mapM (\_ -> genFreshVar) [1..n]
 
 builtinTypes :: Set.Set G.TyName
-builtinTypes = Set.fromList ["int", "bool", "rune", "string"]
+builtinTypes = Set.fromList ["int", "bool", "rune", "string", "void"]
 
 tyBuiltinToTyName :: TyBuiltin -> G.TyName
 tyBuiltinToTyName b =
@@ -230,6 +232,7 @@ classifyTy tau = do
           | t == "bool" -> pure $ TyKindBuiltin TyBool
           | t == "rune" -> pure $ TyKindBuiltin TyRune
           | t == "string" -> pure $ TyKindBuiltin TyString
+          | t == "void" -> pure $ TyKindBuiltin TyVoid
           | otherwise -> failT ("Unknown type name " ++ prettyS t)
 
 withCtx :: String -> T a -> T a
@@ -305,6 +308,11 @@ mkVarEnv l = do
   assertDistinct (map fst l)
   pure $ VarEnv (Map.fromList l)
 
+extendVarEnv :: VarEnv -> [(G.VarName, G.Type)] -> T VarEnv
+extendVarEnv (VarEnv old) l = do
+  VarEnv new <- mkVarEnv l
+  pure (VarEnv (new `Map.union` old)) -- union is left-biased
+
 --
 -- Auxiliary functions
 --
@@ -316,6 +324,9 @@ tyFormalsToTyEnv :: G.TyFormals -> TyEnv
 tyFormalsToTyEnv phi = TyEnv $ Map.fromList (map setBound (G.unTyFormals phi))
   where
     setBound (a, mt) = (a, maybeType mt)
+
+joinTyEnvs :: TyEnv -> TyEnv -> TyEnv
+joinTyEnvs (TyEnv first) (TyEnv second) = TyEnv $ merge preserveMissing preserveMissing (zipWithMatched (\_ _ y -> y)) first second
 
 maybeType :: Maybe G.Type -> G.Type
 maybeType (Just t) = t

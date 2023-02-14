@@ -6,8 +6,8 @@ module TestsForTypeDirectedGenerics (runAllTestsForTpypeDirectedGenerics) where
 
 import Common.FGGParser
 import Common.Utils
-import TypeDirectedGeneric.Translation
-import qualified TypeDirectedGeneric.TargetLanguage as TL
+import TypeDirectedGeneric.SystemF.TopLevelTranslation
+import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
 import System.FilePath
 import qualified Data.List as L
 import qualified Data.Text as T
@@ -62,7 +62,7 @@ match x t = x `T.isInfixOf` t
 runTestForSpec :: FilePath -> Int -> TestSpec -> IO ()
 runTestForSpec path idx spec = do
   let parseCfg =
-        if "oopsla2022" `L.isInfixOf` path
+        if "oopsla2022" `L.isInfixOf` path || "jfp2023" `L.isInfixOf` path
         then ParserConfig ModernGenerics
         else ParserConfig OldstyleGenerics
   prog <- parseFile path parseCfg
@@ -93,7 +93,7 @@ runTestForSpec path idx spec = do
     checkEval racketProg expectedResult = do
       let outFile = "/tmp/fgg-target"
       writeFile (outFile ++ ".txt") (groom racketProg)
-      result <- TL.evalProg (outFile ++ ".rkt") stdlibForTrans racketProg
+      result <- TL.evalProg (outFile ++ ".rkt") "" racketProg
       case (expectedResult, result) of
         (Right x, Right (removeNoise -> t)) ->
           if T.strip x == T.strip t

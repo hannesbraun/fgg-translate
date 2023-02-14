@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: '(tuple-2 Kt-A tuple-0)
+/// TEST EVAL_GOOD: (tuple-2 Kt-A tuple-0)
 
 // our implementition supports recursive structs
 
@@ -9,4 +9,7 @@
 package main;
 type KO struct{ whoopsie KO };
 type A struct{};
-func main() { _ = A{} }
+func main() {
+  var x = A{}
+  fmt.Printf("%v", x)
+}

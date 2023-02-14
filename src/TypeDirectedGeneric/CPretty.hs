@@ -123,9 +123,11 @@ precUnOp :: UnOp -> Int
 precUnOp op =
     case op of
       Not -> maxPrec
+      Inv -> maxPrec
 
 instance Pretty UnOp where
-    pretty Not = "not"
+    pretty Not = "!"
+    pretty Inv = "-"
 
 instance Pretty Decl where
   pretty d =

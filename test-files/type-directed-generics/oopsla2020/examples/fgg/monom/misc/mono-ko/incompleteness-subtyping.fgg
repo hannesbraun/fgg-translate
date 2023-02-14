@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: '(tuple-2 Kt-S tuple-0)
+/// TEST EVAL_GOOD: (tuple-2 Kt-S tuple-0)
 //$ go run github.com/rhu1/fgg -fgg -monomc=-- -v fgg/examples/monom/misc/mono-ko/incompleteness-subtyping.go
 
 // This is not monomorphisable !
@@ -28,6 +28,7 @@ func (x SA(type )) m1(type a Any())() S() {return SA(){}.m1(Box(a))()};
 type SB(type ) struct {};
 func (x SB(type )) m1(type a Any())() S() {return S(){}};
 
-func main() { _ =
-		Dummy(){}.useInterfaceA()(SB(){})
-	}
+func main() {
+    var x = Dummy(){}.useInterfaceA()(SB(){})
+    fmt.Printf("%v", x)
+}

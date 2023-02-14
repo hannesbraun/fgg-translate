@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: "(tuple-2 Kt-One tuple-0)"
+/// TEST EVAL_GOOD: (tuple-2 Kt-One tuple-0)
 
 //$ go run github.com/rhu1/fgg -fgg -v -eval=-1 fgg/examples/expression/expression-fgg.fgg
 //$ go run github.com/rhu1/fgg -fgg -v -monomc=tmp/monom/scratch/scratch.go fgg/examples/expression/expression-fgg.fgg
@@ -115,5 +115,6 @@ type Expr(type ) interface {
 func main() {
   //Expr e = Add(Expr()){Con{1}, Neg(Expr()){Con{2}}}
   //int v = e.Eval()
-  _ = Add(Expr()){Con(){One(){}}, Neg(Expr()){Con(){One(){}}}}.Eval()().String()()
+  var x = Add(Expr()){Con(){One(){}}, Neg(Expr()){Con(){One(){}}}}.Eval()().String()()
+  fmt.Printf("%v", x)
 }

@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: '(tuple-2 Kt-Tuple12 (tuple-12 #f #t #f #t #f #t #f #t #f #t #f #t))
+/// TEST EVAL_GOOD: (tuple-2 Kt-Tuple12 (tuple-12 #f #t #f #t #f #t #f #t #f #t #f #t))
 
 type EQ(type a EQ(a)) interface {
     Equal(x a) bool
@@ -45,7 +45,8 @@ func main() {
     var x11 = spam(Box(int){1})  // false
     var x12 = spam(Box(int){42}) // true
 
-    var _ = Tuple12{x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12}
+    var x = Tuple12{x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12}
+    fmt.Printf("%v", x)
     // The following does not typecheck because it would require
     // EQ(int) <: EQ(EQ(int)) to hold.
     // foo(EQ(int))(Box(int){1}, Box(int){2}) // false

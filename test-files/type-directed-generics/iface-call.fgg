@@ -15,5 +15,6 @@ func doWork(x J) int {
 }
 
 func main() {
-    var _ = doWork(Box{2})
+    var x = doWork(Box{2})
+    fmt.Printf("%v", x)
 }

@@ -32,6 +32,9 @@ library:
     - -Wredundant-constraints
   dependencies:
   - HTF
+  - aeson
+  - aeson-pretty
+  - bytestring
   - containers
   - directory
   - extra
