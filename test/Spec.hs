@@ -42,23 +42,23 @@ data TestSpec
 fileTests :: [TestSpec]
 fileTests =
     [
-      TestSpec "test-files/recursive-interfaces-1/Example.go" "Mk_T 1" DontNeedCasts
-    , TestSpec "test-files/recursive-interfaces-2/Example.go" "True" DontNeedCasts
-    , TestSpec "test-files/recursive-interfaces-3/Example.go" "Mk_T 42" DontNeedCasts
-    , TestSpec "test-files/recursive-interfaces-4/Example.go" "Mk_T 42" DontNeedCasts
-    , TestSpec "test-files/same-name-multiple-types/Example.go" "True" DontNeedCasts
-    , TestSpec "test-files/builtin-types/Example.go" "\"foo\"" DontNeedCasts
-    , TestSpec "test-files/structs/Example.go" "True" NeedCasts
-    , TestSpec "test-files/simple-structural/Example.go" "1" DontNeedCasts
-    , TestSpec "test-files/casts/Example.go" "Mk_S 0 True" NeedCasts
-    , TestSpec "test-files/casts/Fail1.go" Error NeedCasts
-    , TestSpec "test-files/casts/Fail2.go" Error NeedCasts
-    , TestSpec "test-files/casts/Fail3.go" Error NeedCasts
-    , TestSpec "test-files/casts/Fail4.go" Error NeedCasts
-    , TestSpec "test-files/casts/Fail5.go" Error NeedCasts
-    , TestSpec "test-files/iface-call/Example.go" "1" DontNeedCasts
-    , TestSpec "test-files/iface-field/Example.go" "1" DontNeedCasts
-    , TestSpec "test-files/typedefs/Example.go" "1" NeedCasts
+      TestSpec "test-files/haskell-syntax-directed/recursive-interfaces-1/Example.go" "Mk_T 1" DontNeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/recursive-interfaces-2/Example.go" "True" DontNeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/recursive-interfaces-3/Example.go" "Mk_T 42" DontNeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/recursive-interfaces-4/Example.go" "Mk_T 42" DontNeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/same-name-multiple-types/Example.go" "True" DontNeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/builtin-types/Example.go" "\"foo\"" DontNeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/structs/Example.go" "True" NeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/simple-structural/Example.go" "1" DontNeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/casts/Example.go" "Mk_S 0 True" NeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/casts/Fail1.go" Error NeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/casts/Fail2.go" Error NeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/casts/Fail3.go" Error NeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/casts/Fail4.go" Error NeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/casts/Fail5.go" Error NeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/iface-call/Example.go" "1" DontNeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/iface-field/Example.go" "1" DontNeedCasts
+    , TestSpec "test-files/haskell-syntax-directed/typedefs/Example.go" "1" NeedCasts
     -- , TestSpec "test-files/conversion/Example.go" "1" NeedCasts
     -- , TestSpec "test-files/regular-expression/Example.go" "1" NeedCasts
     ]
@@ -102,20 +102,20 @@ main :: IO ()
 main = do
   args <- getArgs
   let fast = fastOpt `elem` args
-      fggOnly = fggOpt `elem` args
+      hs = hsOpt `elem` args
       args' = filter (\x -> not (x `elem` customOpts)) args
   putStrLn ("Running unit tests ...")
-  ecode <-
-    if fggOnly then pure ExitSuccess else runTestWithArgs args' htf_importedTests
+  ecode <- runTestWithArgs args' htf_importedTests
   case ecode of
     ExitFailure _ -> exitWith ecode
     ExitSuccess -> do
       unless fast $ do
         putStrLn ("Running tests for type-directed translation with generics ...")
         runAllTestsForTpypeDirectedGenerics
-        putStrLn ("Running tests for syntax-directed translation ...")
-        unless fggOnly $ mapM_ runFileTest fileTests
+        when hs $ do
+          putStrLn ("Running tests for syntax-directed translation ...")
+          mapM_ runFileTest fileTests
   where
     fastOpt = "--fast"
-    fggOpt = "--fgg"
-    customOpts = [fastOpt, fggOpt]
+    hsOpt = "--hs"
+    customOpts = [fastOpt, hsOpt]

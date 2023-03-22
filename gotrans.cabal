@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.35.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fce369093737f1971ff760e7958ba7e3c151a3c1334453cd8961e65c47de8499
+-- hash: f8e80b8ec63e4565b012f5066c4a9ef8b8f13fd4d4f6a385099161c9648af02c
 
 name:           gotrans
 version:        0.1.0.0
@@ -19,51 +19,50 @@ extra-source-files:
     gotrans
     package.yaml
     stack.yaml
-    test-files/builtin-types/Example.go
-    test-files/casts/Example.go
-    test-files/casts/Fail1.go
-    test-files/casts/Fail2.go
-    test-files/casts/Fail3.go
-    test-files/casts/Fail4.go
-    test-files/casts/Fail5.go
-    test-files/casts/Lib.go
-    test-files/iface-call/Example.go
-    test-files/iface-field/Example.go
-    test-files/recursive-interfaces-1/Example.go
-    test-files/recursive-interfaces-2/Example.go
-    test-files/recursive-interfaces-3/Example.go
-    test-files/recursive-interfaces-4/Example.go
-    test-files/same-name-multiple-types/Example.go
-    test-files/simple-structural/Example.go
-    test-files/structs/Example.go
-    test-files/typedefs/Example.go
-    test-files/builtin-types/Example.hs
-    test-files/builtin-types/Example_NoCasts.hs
-    test-files/casts/Example.hs
-    test-files/casts/Fail1.hs
-    test-files/casts/Fail2.hs
-    test-files/casts/Fail3.hs
-    test-files/casts/Fail4.hs
-    test-files/casts/Fail5.hs
-    test-files/functions/HaskellByHand.hs
-    test-files/iface-call/Example.hs
-    test-files/iface-call/Example_NoCasts.hs
-    test-files/iface-field/Example.hs
-    test-files/iface-field/Example_NoCasts.hs
-    test-files/recursive-interfaces-1/Example.hs
-    test-files/recursive-interfaces-1/Example_NoCasts.hs
-    test-files/recursive-interfaces-2/Example.hs
-    test-files/recursive-interfaces-2/Example_NoCasts.hs
-    test-files/recursive-interfaces-3/Example.hs
-    test-files/recursive-interfaces-3/Example_NoCasts.hs
-    test-files/recursive-interfaces-4/Example.hs
-    test-files/recursive-interfaces-4/Example_NoCasts.hs
-    test-files/same-name-multiple-types/Example.hs
-    test-files/same-name-multiple-types/Example_NoCasts.hs
-    test-files/simple-structural/Example.hs
-    test-files/simple-structural/Example_NoCasts.hs
-    test-files/structs/Example.hs
-    test-files/typedefs/Example.hs
+    test-files/haskell-syntax-directed/builtin-types/Example.go
+    test-files/haskell-syntax-directed/casts/Example.go
+    test-files/haskell-syntax-directed/casts/Fail1.go
+    test-files/haskell-syntax-directed/casts/Fail2.go
+    test-files/haskell-syntax-directed/casts/Fail3.go
+    test-files/haskell-syntax-directed/casts/Fail4.go
+    test-files/haskell-syntax-directed/casts/Fail5.go
+    test-files/haskell-syntax-directed/casts/Lib.go
+    test-files/haskell-syntax-directed/iface-call/Example.go
+    test-files/haskell-syntax-directed/iface-field/Example.go
+    test-files/haskell-syntax-directed/recursive-interfaces-1/Example.go
+    test-files/haskell-syntax-directed/recursive-interfaces-2/Example.go
+    test-files/haskell-syntax-directed/recursive-interfaces-3/Example.go
+    test-files/haskell-syntax-directed/recursive-interfaces-4/Example.go
+    test-files/haskell-syntax-directed/same-name-multiple-types/Example.go
+    test-files/haskell-syntax-directed/simple-structural/Example.go
+    test-files/haskell-syntax-directed/structs/Example.go
+    test-files/haskell-syntax-directed/typedefs/Example.go
+    test-files/haskell-syntax-directed/builtin-types/Example.hs
+    test-files/haskell-syntax-directed/builtin-types/Example_NoCasts.hs
+    test-files/haskell-syntax-directed/casts/Example.hs
+    test-files/haskell-syntax-directed/casts/Fail1.hs
+    test-files/haskell-syntax-directed/casts/Fail2.hs
+    test-files/haskell-syntax-directed/casts/Fail3.hs
+    test-files/haskell-syntax-directed/casts/Fail4.hs
+    test-files/haskell-syntax-directed/casts/Fail5.hs
+    test-files/haskell-syntax-directed/iface-call/Example.hs
+    test-files/haskell-syntax-directed/iface-call/Example_NoCasts.hs
+    test-files/haskell-syntax-directed/iface-field/Example.hs
+    test-files/haskell-syntax-directed/iface-field/Example_NoCasts.hs
+    test-files/haskell-syntax-directed/recursive-interfaces-1/Example.hs
+    test-files/haskell-syntax-directed/recursive-interfaces-1/Example_NoCasts.hs
+    test-files/haskell-syntax-directed/recursive-interfaces-2/Example.hs
+    test-files/haskell-syntax-directed/recursive-interfaces-2/Example_NoCasts.hs
+    test-files/haskell-syntax-directed/recursive-interfaces-3/Example.hs
+    test-files/haskell-syntax-directed/recursive-interfaces-3/Example_NoCasts.hs
+    test-files/haskell-syntax-directed/recursive-interfaces-4/Example.hs
+    test-files/haskell-syntax-directed/recursive-interfaces-4/Example_NoCasts.hs
+    test-files/haskell-syntax-directed/same-name-multiple-types/Example.hs
+    test-files/haskell-syntax-directed/same-name-multiple-types/Example_NoCasts.hs
+    test-files/haskell-syntax-directed/simple-structural/Example.hs
+    test-files/haskell-syntax-directed/simple-structural/Example_NoCasts.hs
+    test-files/haskell-syntax-directed/structs/Example.hs
+    test-files/haskell-syntax-directed/typedefs/Example.hs
 
 library
   exposed-modules:
