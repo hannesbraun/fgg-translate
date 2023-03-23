@@ -510,9 +510,17 @@ transExp' tyEnv varEnv (G.Select e f) = do
                                 (var x)]
           pure (resultTy, resultExp)
     _ -> failT ("Cannot access field " ++ prettyS f ++ " from non-struct type " ++ prettyS tau)
-transExp' tyEnv varEnv (G.MeCall (G.Var (G.VarName "fmt")) (G.MeName "Sprintf") [] [_, x]) = do
-  (_tau, xT) <- transExp tyEnv varEnv x
-  pure (tyBuiltinToType TyString, TL.toString xT)
+transExp' tyEnv varEnv (G.MeCall (G.Var (G.VarName "fmt")) (G.MeName me) [] (fmt:args))
+  | me `elem` ["Printf", "Sprintf"] = do
+  (_tau, fmtT) <- transExp tyEnv varEnv fmt
+  fmt <-
+    case fmtT of
+      TL.ExpStr text -> pure text
+      _ -> failT (T.unpack me ++ " requires string literal as first argument, not " ++ prettyS fmtT)
+  argsT <- mapM (\e -> transExp tyEnv varEnv e >>= \(_, t) -> pure t) args
+  if me == "Printf"
+    then pure (tyBuiltinToType TyInt, TL.printString fmt argsT)
+    else pure (tyBuiltinToType TyString, TL.toString fmt argsT)
 transExp' tyEnv varEnv (G.MeCall recvExp m actuals args) = do
   (tau, eT) <- transExp tyEnv varEnv recvExp
   k <- classifyTy tau
@@ -907,6 +915,7 @@ transMain main = withCtx "main function" $ do
 
 transProg :: G.Program -> T TL.Prog
 transProg prog = do
+  trace $ T.pack ("source program: " ++ show prog)
   declRes <- mapM transDecl (G.p_decls prog)
   x <- freshVar
   let bindings :: [TL.Binding]

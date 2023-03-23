@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: 0
+/// TEST EVAL_GOOD: ""
 
 package main;
 import "fmt";

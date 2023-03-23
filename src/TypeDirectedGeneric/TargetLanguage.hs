@@ -11,7 +11,7 @@ module TypeDirectedGeneric.TargetLanguage (
   , expApp, expAppMany, expAbs, expAbsMany
   , evalProg, pairConstr, mkPair, tupleConstr, mkTuple, tuplePat, matchEq, matchEqFull
   , fstOfPair, sndOfPair, fstOfTriple, sndOfTriple, thdOfTriple, mkTriple, idFun, toString
-  , translateProg
+  , printString, translateProg
   , htf_thisModulesTests
 
 ) where
@@ -42,7 +42,8 @@ newtype Constr = Constr { unConstr :: T.Text }
 data Exp
     = ExpVar Var
     | ExpConstr Constr
-    | ExpApp Exp [Exp]
+    | ExpApp Exp [Exp]        -- nested applications
+    | ExpAppMulti Exp [Exp]   -- function with multiple arguments
     | ExpAbs [Pat] Exp
     | ExpCase Exp [PatClause]
     | ExpTuple [Exp]
@@ -97,6 +98,8 @@ expToSExp exp =
     ExpConstr (Constr k) -> SExpSym k
     ExpApp e es ->
       foldl (\se e -> SExp [app, se, (expToSExp e)]) (expToSExp e) es
+    ExpAppMulti e es ->
+      SExp (expToSExp e : map expToSExp es)
     ExpAbs pats body ->
       foldr (\p se -> SExp [matchLambda, SExp [SExp [patToSExp p], se]]) (expToSExp body) pats
     ExpCase e clauses -> SExp ([match, expToSExp e] ++ map clauseToSExp clauses)
@@ -200,7 +203,11 @@ racketHeader = "#lang racket\n" <> [r|
 
 (define (-id x) x)
 
-(define (-to-string x) (format "~v" x))
+(define (-to-string fmt . args) (apply format (cons fmt args)))
+(define (-print-string fmt . args)
+  (begin
+    (display (apply format (cons fmt args)))
+    0))
 
 (define (-add x y)
   (if (string? x) (string-append x y) (+ x y)))
@@ -302,8 +309,21 @@ sndOfTriple e = expApp (ExpVar "-snd") e
 thdOfTriple :: Exp -> Exp
 thdOfTriple e = expApp (ExpVar "-thd") e
 
-toString :: Exp -> Exp
-toString e = expApp (ExpVar "-to-string") e
+toString :: T.Text -> [Exp] -> Exp
+toString fmt args =
+  ExpAppMulti (ExpVar "-to-string") (ExpStr (rewriteFormat fmt) : args)
+
+rewriteFormat :: T.Text -> T.Text
+rewriteFormat = T.pack . rewriteFormat' . T.unpack
+  where
+    rewriteFormat' [] = []
+    rewriteFormat' [c] = [c]
+    rewriteFormat' ('%':c:rest) = '~' : c : rewriteFormat' rest
+    rewriteFormat' (c:rest) = c : rewriteFormat' rest
+
+printString :: T.Text -> [Exp] -> Exp
+printString fmt args =
+  ExpAppMulti (ExpVar "-print-string") (ExpStr (rewriteFormat fmt) : args)
 
 idFun :: Exp
 idFun = ExpVar "-id"
@@ -334,8 +354,18 @@ instance PrettyPrec Exp where
     case exp of
       ExpVar v -> pretty v
       ExpConstr k -> pretty k
-      ExpApp _ [] -> error ("found application with no parameters: " ++ show exp)
-      ExpApp e es ->
+      ExpApp e [] ->
+        withParens prec funAppPrec $
+        prettyPrec funAppPrec e
+      ExpApp e1 (e2:es) ->
+        foldl
+            (\f arg ->
+                withParens prec funAppPrec $ f <+> prettyPrec funAppPrec arg)
+            (withParens prec funAppPrec $
+             prettyPrec funAppPrec e1 <+>
+             prettyPrec funAppPrec e2)
+            es
+      ExpAppMulti e es ->
         withParens prec funAppPrec $
         let e' = prettyPrec funAppPrec e
             es' = map (prettyPrec funAppPrec) es

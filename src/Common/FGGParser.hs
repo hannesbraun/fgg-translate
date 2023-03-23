@@ -490,7 +490,7 @@ parseMainFunc = annot "main function" $ do
     me <- P.optionMaybe parseMainExpr -- this could be fmt.Printf("%v", result)
     (bindings, result) <-
       case me of
-        Just e | not (isPrintf e) -> pure (l, e)
+        Just e -> pure (l, e)
         _ ->
           if null l
           then pure ([], IntLit 0)
@@ -501,12 +501,6 @@ parseMainFunc = annot "main function" $ do
         }
   where
     third (_, _, x) = x
-    isPrintf exp =
-      case exp of
-        MeCall fmt (MeName "Printf") _ _ -> isFmt fmt
-        MeCall fmt (MeName "Sprintf") _ _ -> isFmt fmt
-        _ -> False
-    isFmt x = x == Var "fmt"
     parseMainExpr = do
       P.try parseMainBinding <|> parseExpr
     parseMainBinding = do
@@ -596,15 +590,23 @@ test_parseProg = do
                      (Var "t")]
         , p_mains =
             [
-              Main [
-                ("x", Nothing, StructLit (TyNamed "T" []) [IntLit 1])
-                ]
-              (MeCall
-                (MeCall (Var "x") "foo" [] [])
-                  "bar"
-                []
-                [])
-            ]
+              Main {
+                m_bindings =
+                    [(VarName{unVarName = "x"}, Nothing,
+                      StructLit (TyNamed (TyName{unTyName = "T"}) []) [IntLit 1]),
+                     (VarName{unVarName = "result"}, Nothing,
+                      MeCall
+                       (MeCall (Var (VarName{unVarName = "x"})) (MeName{unMeName = "foo"})
+                         []
+                         [])
+                       (MeName{unMeName = "bar"})
+                       []
+                       [])],
+                  m_result =
+                    MeCall (Var (VarName{unVarName = "fmt"}))
+                    (MeName{unMeName = "Printf"})
+                    []
+                    [StrLit "%v", Var (VarName{unVarName = "result"})]}]
         }
     myProgString =
         T.unlines
@@ -658,15 +660,23 @@ test_parseProg = do
               ]
         , p_mains =
             [
-              Main [
-                ("x", Nothing, StructLit (TyNamed "T" []) [IntLit 1])
-                ]
-              (MeCall
-                (MeCall (Var "x") "foo" [] [])
-                "bar"
-                []
-                [])
-            ]
+              Main {
+                m_bindings =
+                    [(VarName{unVarName = "x"}, Nothing,
+                      StructLit (TyNamed (TyName{unTyName = "T"}) []) [IntLit 1]),
+                     (VarName{unVarName = "result"}, Nothing,
+                      MeCall
+                       (MeCall (Var (VarName{unVarName = "x"})) (MeName{unMeName = "foo"})
+                         []
+                         [])
+                       (MeName{unMeName = "bar"})
+                       []
+                       [])],
+                  m_result =
+                    MeCall (Var (VarName{unVarName = "fmt"}))
+                    (MeName{unMeName = "Printf"})
+                    []
+                    [StrLit "%v", Var (VarName{unVarName = "result"})]}]
         }
     myProgStringGeneric =
         T.unlines
