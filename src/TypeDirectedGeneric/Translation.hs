@@ -20,6 +20,7 @@ import TypeDirectedGeneric.TransCommon
 
 import qualified Data.Set as Set
 import Data.Map.Strict (Map)
+import Data.Generics
 import qualified Data.Map.Strict as Map
 import Control.Monad.Identity
 import Control.Monad.Extra
@@ -61,6 +62,11 @@ freshVars :: Int -> T [TL.Var]
 freshVars i = do
   xs <- genFreshVars i
   pure (map TL.Var xs)
+
+freshTyVars :: Int -> T [G.TyVarName]
+freshTyVars i = do
+  xs <- genFreshVars i
+  pure (map G.TyVarName xs)
 
 --
 -- Auxiliary judgments
@@ -136,7 +142,9 @@ transType' te@(TyEnv tenv) ee@(GenTyExpEnv expEnv) tau =
             (Just _, Nothing) -> pure (typeOfTyvar (var (tyVarVar a)))
             (Nothing, Just e) -> pure e
             (Just _, Just _) ->
-                failT ("Type variable " ++ prettyS a ++ " bound in type env and type-exp env")
+                failT ("Type variable " ++ prettyS a ++ " bound in type env and type-exp env. " ++
+                       "\nType env: " ++ show tenv ++
+                       "\nType exp env: " ++ show expEnv)
             (Nothing, Nothing) ->
                 failT ("Unbound type variable " ++ prettyS a)
       G.TyNamed t [] ->
@@ -159,7 +167,9 @@ transTypeStar :: TyEnv -> G.Type -> T TL.Exp
 transTypeStar tenv tau = transTypeStar' tenv emptyTyExpEnv tau
 
 transTypeStar' :: TyEnv -> TyExpEnv -> G.Type -> T TL.Exp
-transTypeStar' tenv tyExpEnv tau = do
+transTypeStar' tenv tyExpEnv tau =
+  withCtx ("transTypeStar' " ++ show tau ++
+           ", tenv=" ++ show tenv ++ ", tyExpEnv=" ++ show tyExpEnv) $ do
   k <- classifyTy tau
   case k of
     TyKindBuiltin _ -> transType' tenv tyExpEnv tau
@@ -171,9 +181,23 @@ transTypeStar' tenv tyExpEnv tau = do
       es <- forM (if_methods iface) $ \spec -> transMethodSpec tenv tyExpEnv (G.applyTySubst eta spec)
       pure (mkSigList es)
 
+freshMethodSig :: G.MeSig -> T G.MeSig
+freshMethodSig sig = do
+  let origVars = map fst (G.unTyFormals (G.msig_tyArgs sig))
+  fresh <- freshTyVars (length origVars)
+  let tyvarMap = Map.fromList (zip origVars fresh)
+  pure $ everywhere (mkT (rewriteTyVar tyvarMap)) sig
+  where
+    rewriteTyVar :: Map.Map G.TyVarName G.TyVarName -> G.TyVarName -> G.TyVarName
+    rewriteTyVar m v =
+      case Map.lookup v m of
+        Just x -> x
+        Nothing -> v
+
 -- \Delta |-_{sig} M ~> E
 transMethodSig :: TyEnv -> TyExpEnv -> G.MeSig -> T TL.Exp
-transMethodSig tenv initExpEnv sig = do
+transMethodSig tenv initExpEnv sigOrig = withCtx ("transMethodSig " ++ show sigOrig) $ do
+  sig <- freshMethodSig sigOrig
   let G.TyFormals formals = G.msig_tyArgs sig
   expEnv <-
     extendTyExpEnv initExpEnv
@@ -184,7 +208,7 @@ transMethodSig tenv initExpEnv sig = do
 
 -- \Delta |-_{spec} S ~> E
 transMethodSpec :: TyEnv -> TyExpEnv -> G.MeSpec -> T TL.Exp
-transMethodSpec tenv tyExpEnv spec = do
+transMethodSpec tenv tyExpEnv spec = withCtx ("transMethodSpec " ++ show spec) $ do
   e <- transMethodSig tenv tyExpEnv (G.ms_sig spec)
   pure (TL.expApp (TL.ExpConstr (constrForMeName (G.ms_name spec))) e)
 
@@ -796,6 +820,7 @@ data TransDeclRes
   , tdr_implClause :: Maybe TL.PatClause
   , tdr_starTyClause :: Maybe TL.PatClause
   }
+  deriving (Show)
 
 transDecl :: G.Decl -> T TransDeclRes
 transDecl decl =
@@ -878,7 +903,8 @@ transDecl decl =
                                ("found implementation of method ~a for struct ~a with " <>
                                 "signature ~a  but this does not match required signature ~a")
                                [TL.ExpConstr km, TL.ExpConstr kt, tSigExp, var x])
-          pure $ TransDeclRes (Just binding) (Just patClause) Nothing
+              res = TransDeclRes (Just binding) (Just patClause) Nothing
+          pure res
       G.FunDecl (G.MeSpec f (G.MeSig mFormals args res)) exp ->
         withCtx ("declaration of function " ++ prettyS f) $ do
           tenv <- assertTyFormalsToTyEnv emptyTyFormals mFormals

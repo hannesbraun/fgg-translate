@@ -235,7 +235,9 @@ classifyTy tau = do
 withCtx :: String -> T a -> T a
 withCtx c action = do
   modify' (\s -> s { ts_contextStack = c : (ts_contextStack s) })
+  trace (T.pack $ "Starting " ++ c)
   x <- action
+  trace (T.pack $ "Finished " ++ c)
   modify' (\s -> s { ts_contextStack = tail (ts_contextStack s) })
   pure x
 
@@ -257,6 +259,7 @@ catchT (T action) =
 --
 
 newtype TyEnv = TyEnv { unTyEnv :: Map G.TyVarName G.Type }
+    deriving (Show)
 
 emptyTyEnv :: TyEnv
 emptyTyEnv = TyEnv Map.empty
@@ -271,6 +274,7 @@ emptyTyFormals :: G.TyFormals
 emptyTyFormals = G.TyFormals []
 
 newtype GenTyExpEnv exp = GenTyExpEnv { _unTyExpEnv :: Map G.TyVarName exp }
+    deriving (Show)
 
 emptyTyExpEnv :: GenTyExpEnv exp
 emptyTyExpEnv = GenTyExpEnv Map.empty
