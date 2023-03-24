@@ -16,7 +16,8 @@ else
     run=no
 fi
 
-"$exe" "$@"
+echo "Running $exe $@"
+"$exe" "$@" || exit 1
 
 if [ "$run" == "yes" ]; then
     last="${@: -1}"
