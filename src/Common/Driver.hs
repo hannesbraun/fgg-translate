@@ -141,7 +141,8 @@ driverRun args = do
           Just t -> pure t
           Nothing ->
               case takeExtension (a_inputFile args) of
-                ".go" -> pure TargetSyntax
+                ".go" -> pure TargetTypeGeneric
+                ".fg" -> pure TargetTypeGeneric
                 ".fgg" -> pure TargetTypeGeneric
                 _ -> fail ("No explicit --target given and there is no default for input file " ++
                            a_inputFile args)
