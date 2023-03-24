@@ -41,6 +41,7 @@ data TyBuiltin
   | TyRune
   | TyBool
   | TyString
+  | TyVoid
   deriving (Show)
 
 data TyKind
@@ -201,6 +202,7 @@ tyBuiltinToTyName b =
     TyRune -> "rune"
     TyBool -> "bool"
     TyString -> "string"
+    TyVoid -> "void"
 
 tyBuiltinToType :: TyBuiltin -> G.Type
 tyBuiltinToType b = G.TyNamed (tyBuiltinToTyName b) []

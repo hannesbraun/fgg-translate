@@ -519,7 +519,7 @@ transExp' tyEnv varEnv (G.MeCall (G.Var (G.VarName "fmt")) (G.MeName me) [] (fmt
       _ -> failT (T.unpack me ++ " requires string literal as first argument, not " ++ prettyS fmtT)
   argsT <- mapM (\e -> transExp tyEnv varEnv e >>= \(_, t) -> pure t) args
   if me == "Printf"
-    then pure (tyBuiltinToType TyInt, TL.printString fmt argsT)
+    then pure (tyBuiltinToType TyVoid, TL.printString fmt argsT)
     else pure (tyBuiltinToType TyString, TL.toString fmt argsT)
 transExp' tyEnv varEnv (G.MeCall recvExp m actuals args) = do
   (tau, eT) <- transExp tyEnv varEnv recvExp
