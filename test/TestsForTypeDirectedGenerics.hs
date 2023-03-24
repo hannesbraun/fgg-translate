@@ -107,9 +107,9 @@ runTestForSpec path idx spec = do
           reportError path ("evaluation failed but should succeed: " ++ T.unpack err) []
         (Left x, Left err) ->
           if match x err
-          then reportOk path idx ("evaluated failed with the expected error message")
+          then reportOk path idx ("evaluation failed with the expected error message")
           else reportError path
-                 ("evaluated failed but with an unexpected error.\n" ++
+                 ("evaluation failed but with an unexpected error.\n" ++
                   "ERROR:  " ++ T.unpack err ++ "\n" ++
                   "EXPECT: " ++ T.unpack x)
                  []
