@@ -1,0 +1,24 @@
+/// TEST EVAL_BAD: found implementation of method Km-m for struct Kt-us with signature (tuple-2 tuple-0 (tuple-2 Kt-int Kt-int))  but this does not match required signature (tuple-2 tuple-0 (tuple-2 Kt-bool Kt-bool))
+
+package main;
+type Any interface{};
+
+type ti[alpha Any] interface{
+m(in alpha) alpha
+};
+
+type int struct {};
+
+type bool struct {};
+
+type us struct {};
+
+func (this us) m(in int) int {return in};
+
+func (this bool) foo[beta Any](in ti[int]) beta {
+    return in.(beta)
+};
+
+func main(){
+    _ = bool{}.foo[ti[bool]](us{})
+}

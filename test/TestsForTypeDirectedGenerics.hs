@@ -9,6 +9,7 @@ import Common.Utils
 import TypeDirectedGeneric.Translation
 import qualified TypeDirectedGeneric.TargetLanguage as TL
 import System.FilePath
+import qualified Data.List as L
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Control.Monad
@@ -53,14 +54,17 @@ reportError :: FilePath -> String -> [T.Text] -> IO ()
 reportError path msg trace = do
   putStrLn ("ERROR " ++ path ++ ": " ++ msg)
   outputTrace trace
-  -- fail "Test ERROR"
+  fail "Test ERROR"
 
 match :: T.Text -> T.Text -> Bool
 match x t = x `T.isInfixOf` t
 
 runTestForSpec :: FilePath -> Int -> TestSpec -> IO ()
 runTestForSpec path idx spec = do
-  let parseCfg = ParserConfig OldstyleGenerics
+  let parseCfg =
+        if "oopsla2022" `L.isInfixOf` path
+        then ParserConfig ModernGenerics
+        else ParserConfig OldstyleGenerics
   prog <- parseFile path parseCfg
   let (result, trace) = runTranslation' prog
   case result of

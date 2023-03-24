@@ -1,0 +1,46 @@
+/// TEST EVAL_GOOD: '(tuple-2 Kt-Top tuple-0)
+
+package main;
+
+type Color interface{};
+type Top struct {};
+//func (this Top) Recv[b1 Color](x chan b1) b1 {return <-x};
+func (this Top) Op() Top {return Top{}};
+
+type Red struct {};
+type Blue struct {};
+
+func (this Top) do(x Color) Top {
+return this
+};
+type Base[b1 Color,b2 Color] interface {
+g_chan() Top;
+g1(p1 b1,p2 b2) Base[b1,b2];
+g2(p1 b1,p2 b2) Base[b1,b2]};
+type Derived[b1 Color,b2 Color] struct{};
+func (this Derived[b1 Color,b2 Color]) g_chan() Top {
+return Top{}.Op().Op()
+};
+func (this Derived[b1 Color,b2 Color]) g1(p1 b1,p2 b2) Base[b1,b2]{
+ return this
+};
+func (this Derived[b1 Color,b2 Color]) g2(p1 b1,p2 b2) Base[b1,b2]{
+ return this
+};
+func (this Top) f0[b1 Color,b2 Color, d_ Base[b1,b2]](x d_, p1 b1,p2 b2) Top {
+return this.do(x.g1(p1,p2)).do(x.g2(p1,p2)).do(x.g_chan())
+};
+func (this Top) f4[b1 Color,b2 Color](p1 b1,p2 b2) Top {
+return this.f0[b1,b2, Derived[b1,b2]](Derived[b1,b2]{}, p1,p2)
+};func (this Top) f1[b1 Color,b2 Color]( p1 b1,p2 b2) Top {
+return this.f2[b1,b2](p1,p2)
+};
+func (this Top) f2[b1 Color,b2 Color]( p1 b1,p2 b2) Top {
+return this.f3[b1,b2](p1,p2)
+};
+func (this Top) f3[b1 Color,b2 Color]( p1 b1,p2 b2) Top {
+return this.f4[b1,b2](p1,p2)
+};
+
+func main(){
+_ = Top{}.f1[Red, Red](Red{},Red{}).f1[Red, Blue](Red{},Blue{}).f1[Blue, Red](Blue{},Red{}).f1[Blue, Blue](Blue{},Blue{})}

@@ -1,0 +1,28 @@
+/// TEST EVAL_BAD: found implementation of method Km-Do for struct Kt-Bar with signature (tuple-2 (tuple-1 Kt-Any) (tuple-3 Ki-1 Kt-Bool Kt-Int))  but this does not match required signature (tuple-2 (tuple-1 Kt-Any) (tuple-3 Ki-1 Kt-Bool Kt-Bool))
+
+// ~/go/bin/fcgg -dictpass -fgg non_variance.fgg
+package main;
+
+type Any interface {};
+type Dummy struct {};
+type Bool struct {};
+type Int struct {};
+
+type Foo[T Any] interface {
+    Do[S Any](a S, b Bool) T
+};
+
+type Bar[T Any] struct {};
+
+func (x Bar[T Any]) Do[S Any](a S, b T) Int { 
+    return Int{}
+ };
+
+func (x Dummy) Main(t Any) Any {
+    return t.(Foo[Bool]) // checks dynamically that a Bar[Bool] value has type Foo[Boo]. 
+                         // This fails because the Do implementation for Bar returns Int but should return Bool
+};
+
+func main() {
+    _ = Dummy{}.Main(Bar[Bool]{})
+}
