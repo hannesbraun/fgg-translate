@@ -1,0 +1,9 @@
+Contains tests from the github repository for the article "Generic Go to
+Go: Dictionary-Passing, Monomorphisation, and Hybrid" by Stephen Ellis,
+Shuofei Zhu, Nobuko Yoshida, Linhai Song, OOPSLA 2022.
+
+URL of repository: https://github.com/sfzhu93/fgg2go
+Commit: a0428bc5cc250df6dbc4faf29325e5cfd5dd1009
+  Author: sfzhu93 <zhushuofei@gmail.com>
+  Date:   Tue Jan 24 21:14:25 2023 -0500
+Copied: 2023-03-24
