@@ -1,0 +1,12 @@
+Contains tests from the github repository for the article "Featherweight Go" by
+Robert Griesemer, Raymond Hu, Wen Kokke, Julien Lange, Ian Lance Taylor,
+Bernardo Toninho, Philip Wadler and Nobuko Yoshida, OOPSLA 2020.
+
+URL of repository: https://github.com/rhu1/fgg
+Commit: 5b86f091eff3f68841c49a7cae418be4c708df78 
+  Author: Raymond Hu <r.z.h.hu@herts.ac.uk>
+  Date:   Fri Mar 5 17:02:21 2021 +0000
+Copied: 2023-03-24
+
+- The tests in subdirectory from-source were extracted from the source files internal/fg/fg_test.go and internal/fgg/fgg_test.go
+- The tests in subdirectory examples were taken from the subdirectories examples/fg and examples/fgg

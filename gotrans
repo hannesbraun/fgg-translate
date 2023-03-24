@@ -8,4 +8,19 @@ if [ -z "$exe" ]; then
     exit 1
 fi
 popd > /dev/null
+
+if [ "$1" == "--run" ]; then
+    run=yes
+    shift
+else
+    run=no
+fi
+
 "$exe" "$@"
+
+if [ "$run" == "yes" ]; then
+    last="${@: -1}"
+    rkt=$(echo "$last" | sed 's/\.[^.]*$/.rkt/g')
+    echo "Invoking racket on $rkt"
+    racket "$rkt"
+fi

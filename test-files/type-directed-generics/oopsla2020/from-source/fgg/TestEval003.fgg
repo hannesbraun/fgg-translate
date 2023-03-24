@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: "'(tuple-2 Kt-A tuple-0) ,_()+- '(tuple-2 Kt-A tuple-0)"
+/// TEST EVAL_GOOD: "(tuple-2 Kt-A tuple-0) ,_()+- (tuple-2 Kt-A tuple-0)"
 
 package main;
 import "fmt";

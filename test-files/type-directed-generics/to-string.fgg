@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: "'(tuple-3 (-sig ()) 42 ())"
+/// TEST EVAL_GOOD: "42"
 
 func foo(x Any) string {
     return fmt.Sprintf("%v", x)

@@ -66,7 +66,7 @@ runTestForSpec path spec = do
       case spec of
         TypecheckBad x ->
           if match x (T.pack err)
-          then reportOk path "failed to typecheck as expected"
+          then reportOk path "failed to typecheck with the expected error message"
           else reportError path
                    ("failed to typecheck with unexpected error.\n" ++
                     "ERROR:  " ++ err ++ "\n" ++
@@ -91,7 +91,7 @@ runTestForSpec path spec = do
       case (expectedResult, result) of
         (Right x, Right (removeNoise -> t)) ->
           if T.strip x == T.strip t
-          then reportOk path ("evaluated successful as expected")
+          then reportOk path ("evaluated successful to the expected result")
           else reportError path
                  ("evaluated successful but to an unexpected result.\n" ++
                   "RESULT: " ++ T.unpack t ++ "\n" ++
@@ -101,7 +101,7 @@ runTestForSpec path spec = do
           reportError path ("evaluation failed but should succeed: " ++ T.unpack err) []
         (Left x, Left err) ->
           if match x err
-          then reportOk path ("evaluated failed as expected")
+          then reportOk path ("evaluated failed with the expected error message")
           else reportError path
                  ("evaluated failed but with an unexpected error.\n" ++
                   "ERROR:  " ++ T.unpack err ++ "\n" ++
