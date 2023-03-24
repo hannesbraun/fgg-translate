@@ -205,15 +205,13 @@ racketHeader = "#lang racket\n" <> [r|
 
 (define (-to-string fmt . args) (apply format (cons fmt (map -render args))))
 (define (-print-string fmt . args)
-  (begin
-    (display (apply format (cons fmt (map -render args))))
-    0))
+  (display (apply format (cons fmt (map -render args)))))
 
 ; Called when converting to string. Extracts the struct part from an interface value
 (define (-render x)
   (match x
-   ((list 'tuple-3 _ s _) s)
-   (_ x)))
+   ((list 'tuple-3 _ s _) (-render s))
+   (_ (if (list? x) (map -render x) x))))
 
 (define (-add x y)
   (if (string? x) (string-append x y) (+ x y)))
@@ -325,6 +323,8 @@ rewriteFormat = T.pack . rewriteFormat' . T.unpack
     rewriteFormat' [] = []
     rewriteFormat' [c] = [c]
     rewriteFormat' ('%':'v':rest) = '~' : 'a' : rewriteFormat' rest
+    rewriteFormat' ('%':'#':'v':rest) = '~' : 'a' : rewriteFormat' rest
+    rewriteFormat' ('%':'#':c:rest) = '~' : c : rewriteFormat' rest
     rewriteFormat' ('%':c:rest) = '~' : c : rewriteFormat' rest
     rewriteFormat' (c:rest) = c : rewriteFormat' rest
 
