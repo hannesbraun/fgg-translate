@@ -842,7 +842,7 @@ transDecl decl =
         pure $ TransDeclRes Nothing Nothing (Just patClause)
       G.MeDecl (x, t, tFormals)
                  (G.MeSpec m sig@(G.MeSig mFormals args res))
-                 exp ->
+                 body ->
         -- TD-METHOD
         withCtx ("declaration of method " ++ prettyS m ++ " for " ++ prettyS t) $ do
           k <- classifyTyName t
@@ -860,7 +860,7 @@ transDecl decl =
           let alphas = tyVarsFromFormals tFormals
               betas = tyVarsFromFormals mFormals
           venv <- mkVarEnv ((x, G.TyNamed t (map G.TyVar alphas)) : args)
-          tExp <- transExpSub tenv venv exp res
+          tExp <- transMethodBody tenv venv body res
           let tM = methodVar m t
               xAlphas = map tyVarVar alphas
               tX = varVar x
@@ -905,12 +905,12 @@ transDecl decl =
                                [TL.ExpConstr km, TL.ExpConstr kt, tSigExp, var x])
               res = TransDeclRes (Just binding) (Just patClause) Nothing
           pure res
-      G.FunDecl (G.MeSpec f (G.MeSig mFormals args res)) exp ->
+      G.FunDecl (G.MeSpec f (G.MeSig mFormals args res)) body ->
         withCtx ("declaration of function " ++ prettyS f) $ do
           tenv <- assertTyFormalsToTyEnv emptyTyFormals mFormals
           assertTypesOk tenv (res : map snd args)
           venv <- mkVarEnv args
-          tExp <- transExpSub tenv venv exp res
+          tExp <- transMethodBody tenv venv body res
           let betas = tyVarsFromFormals mFormals
               xBetas = map tyVarVar betas
               tXs = map (varVar . fst) args
@@ -921,11 +921,17 @@ transDecl decl =
                             tExp
           pure $ TransDeclRes (Just binding) Nothing Nothing
 
-transMain :: G.Main -> T TL.Exp
-transMain main = withCtx "main function" $ do
-  (varEnv, cont) <- loop emptyVarEnv id (G.m_bindings main)
-  (_, mainE) <- transExp emptyTyEnv varEnv (G.m_result main)
-  pure (cont mainE)
+transMethodBody :: TyEnv -> VarEnv -> G.MeBody -> G.Type -> T TL.Exp
+transMethodBody tenv venv body resTy = withCtx "method/function body" $ do
+  (varEnv, cont) <- loop venv id (G.mb_bindings body)
+  returnE <-
+    case G.mb_return body of
+      Just mainExp -> transExpSub tenv varEnv mainExp resTy
+      Nothing ->
+        if G.isVoid resTy
+           then pure TL.ExpVoid
+           else failT ("Method/function returns nothing but return type is " ++ prettyS resTy)
+  pure (cont returnE)
   where
     loop :: VarEnv -> (TL.Exp -> TL.Exp) -> [(G.VarName, Maybe G.Type, G.Exp)] -> T (VarEnv, TL.Exp -> TL.Exp)
     loop varEnv cont [] = pure (varEnv, cont)
@@ -938,6 +944,11 @@ transMain main = withCtx "main function" $ do
             pure (ty, exp')
       let newCont e = cont $ TL.ExpCase translatedExp [TL.PatClause (TL.PatVar (varVar x)) e]
       loop (VarEnv (Map.insert x tau m)) newCont rest
+
+transMain :: G.MeBody -> T TL.Exp
+transMain main = withCtx "main function" $ do
+  e <- transMethodBody emptyTyEnv emptyVarEnv main G.tyVoid
+  pure e
 
 transProg :: G.Program -> T TL.Prog
 transProg prog = do

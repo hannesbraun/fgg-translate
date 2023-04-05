@@ -22,5 +22,6 @@ func doWork(x Any) int {
 }
 
 func main() {
-    var _ = doWork(Box(int){2})
+    var x = doWork(Box(int){2})
+    fmt.Printf("%v", x)
 }

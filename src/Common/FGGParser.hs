@@ -18,7 +18,6 @@ import qualified Text.Parsec.Expr as P
 
 import Test.Framework
 
-import Data.Either
 import Data.Maybe
 import Data.Generics
 import Control.Monad
@@ -198,8 +197,8 @@ parseMethodSpec' :: MeName -> GoParser MeSpec
 parseMethodSpec' name = annot "method spec" $ do
   formals <- parseTyFormals
   args <- parens $ P.sepBy parseVarDecl comma
-  res <- parseType
-  return $ MeSpec name (MeSig formals args res)
+  res <- P.optionMaybe parseType
+  return $ MeSpec name (MeSig formals args (fromMaybe tyVoid res))
 
 -- We split parsing method declarations in 2 parts so that we need a try only
 -- for the first part, namely the "func (" part. The try is needed because
@@ -227,31 +226,53 @@ parseMeDeclPart2 = annot "method declaration" $ do
   formals <- parseTyFormals
   symbol ")"
   spec <- parseMethodSpec
-  expr <- braces $ do
-    reserved "return"
-    parseExpr
-  return $ MeDecl (var, ty, formals) spec expr
+  body <- braces $ parseMethodBody
+  return $ MeDecl (var, ty, formals) spec body
 
-isMainFunName :: T.Text -> Bool
-isMainFunName name =
-  name `elem` ("main" : map T.pack altMains)
+parseMethodBody :: GoParser MeBody
+parseMethodBody = annot "method/function body" $ do
+  l <- P.many parseBindingOrExpr
+  ret <- P.optionMaybe parseReturnExpr
+  return $ MeBody
+       { mb_bindings = l
+       , mb_return = ret
+       }
   where
-    altMains = ["main" ++ show i | i <- [0..10]]
+    parseReturnExpr = do
+      reserved "return"
+      parseExpr
+    parseBindingOrExpr = parseBinding <|> parseAnonBinding <|> parseToplevelExpr
+    parseToplevelExpr = do
+      e <- parseExpr
+      return (VarName "_", Nothing, e)
+    parseAnonBinding = do
+      t <- P.try $ do
+             x <- identifier
+             unless (x == "_") $ fail "expected _"
+             t <- P.optionMaybe parseType
+             reservedOp "="
+             pure t
+      e <- parseExpr
+      pure (VarName "_", t, e)
+    parseBinding = do
+      reserved "var"
+      x <- identifier
+      t <- P.optionMaybe parseType
+      reservedOp "="
+      expr <- parseExpr
+      return (VarName x, t, expr)
 
 parseFunDeclPart1 :: GoParser MeName
 parseFunDeclPart1 = annot "function declaration" $ do
   reserved "func"
   x <- identifier
-  when (isMainFunName x) $ fail ("Unexpected main function")
   return (MeName x)
 
 parseFunDeclPart2 :: MeName -> GoParser Decl
 parseFunDeclPart2 name = annot "method declaration" $ do
   spec <- parseMethodSpec' name
-  expr <- braces $ do
-    reserved "return"
-    parseExpr
-  return $ FunDecl spec expr
+  body <- braces parseMethodBody
+  return $ FunDecl spec body
 
 parseTyLit :: GoParser TyLit
 parseTyLit = parseStruct <|> parseIface
@@ -479,43 +500,6 @@ test_parseExpr = do
           Right exp ->
               assertFailure ("Expected parse error for input " ++ show s ++ " got: " ++ show exp)
 
-parseMainFunc :: GoParser Main
-parseMainFunc = annot "main function" $ do
-  reserved "func"
-  x <- identifier
-  unless (isMainFunName x) $ fail ("Main function must be named 'main' or 'main0', 'main1', ... ")
-  parens $ return ()
-  braces $ do
-    l <- P.many parseBinding
-    me <- P.optionMaybe parseMainExpr -- this could be fmt.Printf("%v", result)
-    (bindings, result) <-
-      case me of
-        Just e -> pure (l, e)
-        _ ->
-          if null l
-          then pure ([], IntLit 0)
-          else pure (L.init l, third (L.last l))
-    return $ Main
-        { m_bindings = bindings
-        , m_result = result
-        }
-  where
-    third (_, _, x) = x
-    parseMainExpr = do
-      P.try parseMainBinding <|> parseExpr
-    parseMainBinding = do
-      _ <- identifier
-      reservedOp "="
-      expr <- parseExpr
-      pure expr
-    parseBinding = do
-      reserved "var"
-      x <- identifier
-      t <- P.optionMaybe parseType
-      reservedOp "="
-      expr <- parseExpr
-      return (VarName x, t, expr)
-
 parseHeader :: GoParser ()
 parseHeader = annot "header" $ do
   reserved "package"
@@ -537,13 +521,23 @@ parseProg :: GoParser Program
 parseProg = annot "program" $ do
   whiteSpace
   _ <- P.optionMaybe parseHeader
-  declsAndMains <- P.many parseDeclOrMainFunc
-  let (decls, mains) = partitionEithers declsAndMains
+  allDecls <- P.many parseDecl
+  let mains = mapMaybe asMain allDecls
+      decls = mapMaybe asDecl allDecls
   pure $ Program decls mains
   where
-    parseDeclOrMainFunc =
-      (parseDecl >>= \x -> pure (Left x)) <|>
-      (parseMainFunc >>= \x -> pure (Right x))
+    asMain (FunDecl (MeSpec name (MeSig (TyFormals []) [] resTy)) body)
+      | isMainFunName name && isVoid resTy = Just body
+    asMain _ = Nothing
+    asDecl d =
+      case asMain d of
+        Just _ -> Nothing
+        Nothing -> Just d
+    isMainFunName :: MeName -> Bool
+    isMainFunName (MeName name) =
+      name `elem` ("main" : map T.pack altMains)
+      where
+        altMains = ["main" ++ show i | i <- [0..10]]
 
 parseDeclsWithEof :: GoParser [Decl]
 parseDeclsWithEof = do
@@ -558,12 +552,25 @@ parseProgWithEof = do
   P.eof
   return p
 
+test_parseMethodBody :: IO ()
+test_parseMethodBody = do
+  subAssert $ testParse "_ = doWork()"
+    (MeBody{mb_bindings =
+         [(VarName{unVarName = "_"}, Nothing,
+           FunCall (MeName{unMeName = "doWork"}) [] [])],
+       mb_return = Nothing})
+  where
+    testParse s expected =
+      case runParserOnString newstyleCfg parseMethodBody s of
+        Left err -> assertFailure ("Unexpected parse error for " ++ show s ++ ": " ++ show err)
+        Right res -> assertEqual expected res
+
 test_parseProg :: IO ()
 test_parseProg = do
   subAssert $ testParse "package main func main() { var result = 1 }"
     (Program
       [anyDecl]
-      [Main [] (IntLit 1)])
+      [MeBody [(VarName "result", Nothing, IntLit 1)] Nothing])
   subAssert $ testParse myProgString myProg
   subAssert $ testParse myProgStringGeneric myProgGeneric
   subAssert $ testParse' ModernGenerics myModernProgStringGeneric myProgGeneric
@@ -587,26 +594,28 @@ test_parseProg = do
                      (MeSpec {
                         ms_name = "foo"
                       , ms_sig = MeSig noTyFormals [] (TyNamed "I1" []) })
-                     (Var "t")]
+                     (MeBody [] (Just $ Var "t"))]
         , p_mains =
             [
-              Main {
-                m_bindings =
+              MeBody {
+                mb_bindings =
                     [(VarName{unVarName = "x"}, Nothing,
                       StructLit (TyNamed (TyName{unTyName = "T"}) []) [IntLit 1]),
-                     (VarName{unVarName = "result"}, Nothing,
-                      MeCall
-                       (MeCall (Var (VarName{unVarName = "x"})) (MeName{unMeName = "foo"})
-                         []
-                         [])
-                       (MeName{unMeName = "bar"})
+                      (VarName{unVarName = "result"}, Nothing,
+                       MeCall
+                        (MeCall (Var (VarName{unVarName = "x"})) (MeName{unMeName = "foo"})
+                          []
+                          [])
+                        (MeName{unMeName = "bar"})
+                        []
+                        []),
+                      (VarName "_", Nothing,
+                       MeCall (Var (VarName{unVarName = "fmt"}))
+                       (MeName{unMeName = "Printf"})
                        []
-                       [])],
-                  m_result =
-                    MeCall (Var (VarName{unVarName = "fmt"}))
-                    (MeName{unMeName = "Printf"})
-                    []
-                    [StrLit "%v", Var (VarName{unVarName = "result"})]}]
+                       [StrLit "%v", Var (VarName{unVarName = "result"})])
+                    ],
+               mb_return = Nothing }]
         }
     myProgString =
         T.unlines
@@ -648,7 +657,7 @@ test_parseProg = do
                           MeSig (TyFormals [(TyVarName "a", Nothing)])
                             [(VarName "x", TyVar (TyVarName "a"))]
                             (TyVar (TyVarName "a")) })
-                     (Var "x")
+                     (MeBody [] (Just $ Var "x"))
               , MeDecl
                      ("t", "T", (TyFormals [(TyVarName "a", Nothing)]))
                      (MeSpec {
@@ -656,12 +665,12 @@ test_parseProg = do
                       , ms_sig =
                           MeSig (TyFormals [(TyVarName "c", Nothing)]) []
                             (TyVar (TyVarName "a")) })
-                     (Var "t")
+                     (MeBody [] (Just $ Var "t"))
               ]
         , p_mains =
             [
-              Main {
-                m_bindings =
+              MeBody {
+                mb_bindings =
                     [(VarName{unVarName = "x"}, Nothing,
                       StructLit (TyNamed (TyName{unTyName = "T"}) []) [IntLit 1]),
                      (VarName{unVarName = "result"}, Nothing,
@@ -671,12 +680,14 @@ test_parseProg = do
                          [])
                        (MeName{unMeName = "bar"})
                        []
-                       [])],
-                  m_result =
-                    MeCall (Var (VarName{unVarName = "fmt"}))
-                    (MeName{unMeName = "Printf"})
-                    []
-                    [StrLit "%v", Var (VarName{unVarName = "result"})]}]
+                       []),
+                      (VarName "_", Nothing,
+                       MeCall (Var (VarName{unVarName = "fmt"}))
+                       (MeName{unMeName = "Printf"})
+                       []
+                       [StrLit "%v", Var (VarName{unVarName = "result"})])
+                    ],
+                  mb_return = Nothing }]
         }
     myProgStringGeneric =
         T.unlines

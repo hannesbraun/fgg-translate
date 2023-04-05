@@ -74,7 +74,7 @@ data MeDecl
     , me_tyName :: G.TyName
     , me_formals :: G.TyFormals
     , me_spec :: G.MeSpec
-    , me_exp :: G.Exp
+    , me_exp :: G.MeBody
     }
 
 data Iface
@@ -193,7 +193,7 @@ genFreshVars :: Int -> T [T.Text]
 genFreshVars n = mapM (\_ -> genFreshVar) [1..n]
 
 builtinTypes :: Set.Set G.TyName
-builtinTypes = Set.fromList ["int", "bool", "rune", "string"]
+builtinTypes = Set.fromList ["int", "bool", "rune", "string", "void"]
 
 tyBuiltinToTyName :: TyBuiltin -> G.TyName
 tyBuiltinToTyName b =

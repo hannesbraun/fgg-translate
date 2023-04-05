@@ -40,6 +40,13 @@ data Type
     | TyNamed TyName [Type]
     deriving (Show, Eq, Ord, Data, Typeable)
 
+tyVoid :: Type
+tyVoid = TyNamed (TyName "void") []
+
+isVoid :: Type -> Bool
+isVoid (TyNamed (TyName "void") []) = True
+isVoid _ = False
+
 data MeSig
     = MeSig
       { msig_tyArgs :: TyFormals
@@ -63,9 +70,16 @@ data TyLit = Struct [(FieldName, Type)]
            | Iface [MeSpec]
                   deriving (Eq, Show, Data, Typeable)
 
+data MeBody
+    = MeBody
+    { mb_bindings :: [(VarName, Maybe Type, Exp)]
+    , mb_return :: Maybe Exp
+    }
+    deriving (Eq, Show, Data, Typeable)
+
 data Decl = TypeDecl TyName TyFormals TyLit
-          | MeDecl (VarName, TyName, TyFormals) MeSpec Exp
-          | FunDecl MeSpec Exp
+          | MeDecl (VarName, TyName, TyFormals) MeSpec MeBody
+          | FunDecl MeSpec MeBody
                   deriving (Eq, Show, Data, Typeable)
 
 data Exp = Var VarName
@@ -86,14 +100,7 @@ data Exp = Var VarName
 data Program
     = Program
     { p_decls :: [Decl]
-    , p_mains :: [Main]
-    }
-    deriving (Eq, Show, Data, Typeable)
-
-data Main
-    = Main
-    { m_bindings :: [(VarName, Maybe Type, Exp)]
-    , m_result :: Exp
+    , p_mains :: [MeBody]
     }
     deriving (Eq, Show, Data, Typeable)
 

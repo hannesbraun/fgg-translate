@@ -1,6 +1,6 @@
-/// TEST EVAL_GOOD: "(tuple-2 Kt-A tuple-0) ,_()+- (tuple-2 Kt-A tuple-0)"
+/// TEST EVAL_GOOD: (tuple-2 Kt-A tuple-0) ,_()+- (tuple-2 Kt-A tuple-0)
 
 package main;
 import "fmt";
 type A(type ) struct {};
-func main() { _ = fmt.Sprintf("%v ,_()+- %v", A(){}, A(){}) }
+func main() { fmt.Printf("%v ,_()+- %v", A(){}, A(){}) }

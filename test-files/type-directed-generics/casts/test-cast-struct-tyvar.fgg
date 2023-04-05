@@ -11,5 +11,6 @@ func doWork(type a)(x S) a {
 }
 
 func main() {
-    _ = doWork(I1)(S{}).foo()
+    var x = doWork(I1)(S{}).foo()
+    fmt.Printf("%v", x)
 }

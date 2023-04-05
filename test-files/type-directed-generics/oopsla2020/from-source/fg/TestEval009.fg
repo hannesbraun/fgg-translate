@@ -1,7 +1,8 @@
-/// TEST EVAL_GOOD: '(tuple-2 Kt-ToAny (tuple-1 (tuple-3 (-sig ()) (tuple-2 Kt-A tuple-0) ())))
+/// TEST EVAL_GOOD:  (tuple-2 Kt-ToAny (tuple-1 (tuple-2 Kt-A tuple-0)))
 type Any interface {};
 type ToAny struct { any Any() };
 type A struct {};
 func main() {
     var a = ToAny{A{}}
+    fmt.Printf("%v", a)
 }

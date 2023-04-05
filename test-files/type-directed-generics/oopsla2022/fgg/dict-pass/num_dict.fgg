@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: '(tuple-2 Kt-Int tuple-0)
+/// TEST EVAL_GOOD: (tuple-2 Kt-Int tuple-0)
 
 //This program tries to mock Fig. 1 and Fig. 2 in paper walder88
 //https://people.csail.mit.edu/dnj/teaching/6898/papers/wadler88.pdf
@@ -37,5 +37,6 @@ type TimesTwoFactory struct {
 
 
 func main() {
-_ = TimesTwoFactory{}.TimesTwo[Int](Int{})
+  var x = TimesTwoFactory{}.TimesTwo[Int](Int{})
+  fmt.Printf("%v", x)
 }

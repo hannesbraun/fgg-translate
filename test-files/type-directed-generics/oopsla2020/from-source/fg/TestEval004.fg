@@ -1,7 +1,10 @@
-/// TEST EVAL_GOOD: '(tuple-2 Kt-A tuple-0)
+/// TEST EVAL_GOOD: (tuple-2 Kt-A tuple-0)
 
 package main;
 type Any interface {};
 type ToAny struct { any Any };
 type A struct {};
-func main() { _ = ToAny{A{}}.any.(A) }
+func main() {
+  var x = ToAny{A{}}.any.(A)
+  fmt.Printf("%v", x)
+}

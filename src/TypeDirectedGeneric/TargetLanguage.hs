@@ -7,7 +7,7 @@ module TypeDirectedGeneric.TargetLanguage (
 
     Var(..), Constr(..), PatClause(..), Pat(..), Binding(..), Prog(..)
   , Exp(ExpVar, ExpConstr, ExpCase, ExpBinOp, ExpUnOp, ExpCond, ExpInt,
-       ExpBool, ExpStr, ExpChar, ExpFail, ExpList)
+       ExpBool, ExpStr, ExpChar, ExpFail, ExpList, ExpVoid)
   , expApp, expAppMany, expAbs, expAbsMany
   , evalProg, pairConstr, mkPair, tupleConstr, mkTuple, tuplePat, matchEq, matchEqFull
   , fstOfPair, sndOfPair, fstOfTriple, sndOfTriple, thdOfTriple, mkTriple, idFun, toString
@@ -56,6 +56,7 @@ data Exp
     | ExpStr T.Text
     | ExpChar Char
     | ExpFail T.Text [Exp]
+    | ExpVoid
     deriving (Eq, Ord, Show, Data, Typeable)
 
 expApp :: Exp -> Exp -> Exp
@@ -116,6 +117,7 @@ expToSExp exp =
     ExpStr t -> SExpStr t
     ExpChar c -> SExpChar c
     ExpFail t args -> SExp ([error, SExpSym "ERROR", SExpStr t] ++ map expToSExp args)
+    ExpVoid -> SExp [SExpVar "void"]
   where
     clauseToSExp (PatClause p e) = SExp [patToSExp p, expToSExp e]
     patToSExp p =
@@ -407,6 +409,7 @@ instance PrettyPrec Exp where
         withParens prec funAppPrec $
         text "error" <+> pretty (show s) <+>
         sepBy space (map (prettyPrec funAppPrec) args)
+      ExpVoid -> text "void"
 
 instance Pretty Pat where
   pretty = prettyPrec 0

@@ -4,5 +4,6 @@ func foo(x Any) string {
     return fmt.Sprintf("%v", x)
 }
 func main() {
-    var _ = foo(42)
+    var x = foo(42)
+    fmt.Printf("%s", x)
 }

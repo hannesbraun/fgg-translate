@@ -1,10 +1,10 @@
-/// TEST EVAL_GOOD: '(tuple-2 Kt-Pair (tuple-2 (tuple-3 (-sig ()) (tuple-2 Kt-A tuple-0) ()) (tuple-3 (-sig ()) (tuple-2 Kt-B tuple-0) ())))
+/// TEST EVAL_GOOD: (tuple-2 Kt-Pair (tuple-2 (tuple-2 Kt-A tuple-0) (tuple-2 Kt-B tuple-0)))
 package main;
 
 type Any(type ) interface {};
 
-type Pair(type ) struct { 
-	fst Any(); 
+type Pair(type ) struct {
+	fst Any();
 	snd Any()
 	};
 
@@ -29,9 +29,11 @@ func (x C(type )) mtop(type )(y tI()) Any() {
 };
 
 
-func main() { _ =
+func main() {
+  var x =
 	Pair(){
 		C(){}.mtop()(A(){})
 		, B(){}
 	}
+  fmt.Printf("%v", x)
 }

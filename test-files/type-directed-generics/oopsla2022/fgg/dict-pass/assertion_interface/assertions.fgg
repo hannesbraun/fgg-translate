@@ -1,4 +1,4 @@
-/// TEST EVAL_GOOD: '(tuple-3 (-sig ((Km-m (tuple-2 tuple-0 (tuple-2 Kt-int Kt-any))))) (tuple-2 Kt-uS tuple-0) (#<procedure:...face/assertions.rkt:124:3>))
+/// TEST EVAL_GOOD: (tuple-2 Kt-uS tuple-0)
 
 package main;
 
@@ -19,5 +19,6 @@ func (this uS) m(int int) any {return this};
 func (this bool) foo(x any) any {return x};
 
 func main() {
-_ = bool{}.foo(uS{}).(tI)
+  var x = bool{}.foo(uS{}).(tI)
+  fmt.Printf("%v", x)
 }
