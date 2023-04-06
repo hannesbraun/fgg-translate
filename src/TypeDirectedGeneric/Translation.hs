@@ -14,7 +14,7 @@ import Common.PrettyUtils
 import Common.Types
 import qualified Common.FGGAST as G
 import Common.FGGPretty ()
-import qualified TypeDirectedGeneric.TargetLanguage as TL
+import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
 import Prettyprinter
 import TypeDirectedGeneric.TransCommon
 

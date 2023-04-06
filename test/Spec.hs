@@ -5,7 +5,7 @@ module Main where
 import {-@ HTF_TESTS @-} Common.FGParser
 import {-@ HTF_TESTS @-} Common.FGGParser
 import {-@ HTF_TESTS @-} Common.FGGAST
-import {-@ HTF_TESTS @-} TypeDirectedGeneric.TargetLanguage
+import {-@ HTF_TESTS @-} TypeDirectedGeneric.UntypedTargetLanguage
 import Common.Driver
 import Common.Types
 import TestsForTypeDirectedGenerics

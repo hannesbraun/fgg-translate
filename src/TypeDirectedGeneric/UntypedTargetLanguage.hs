@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
-module TypeDirectedGeneric.TargetLanguage (
+module TypeDirectedGeneric.UntypedTargetLanguage (
 
     Var(..), Constr(..), PatClause(..), Pat(..), Binding(..), Prog(..)
   , Exp(ExpVar, ExpConstr, ExpCase, ExpBinOp, ExpUnOp, ExpCond, ExpInt,

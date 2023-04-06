@@ -7,7 +7,7 @@ module TestsForTypeDirectedGenerics (runAllTestsForTpypeDirectedGenerics) where
 import Common.FGGParser
 import Common.Utils
 import TypeDirectedGeneric.Translation
-import qualified TypeDirectedGeneric.TargetLanguage as TL
+import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
 import System.FilePath
 import qualified Data.List as L
 import qualified Data.Text as T

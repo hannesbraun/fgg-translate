@@ -85,7 +85,7 @@ library
       TypeDirectedGeneric.C
       TypeDirectedGeneric.CPretty
       TypeDirectedGeneric.SExp
-      TypeDirectedGeneric.TargetLanguage
+      TypeDirectedGeneric.UntypedTargetLanguage
       TypeDirectedGeneric.TransCommon
       TypeDirectedGeneric.Translation
   other-modules:
