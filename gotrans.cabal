@@ -3,8 +3,6 @@ cabal-version: 1.12
 -- This file has been generated from package.yaml by hpack version 0.35.0.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: f8e80b8ec63e4565b012f5066c4a9ef8b8f13fd4d4f6a385099161c9648af02c
 
 name:           gotrans
 version:        0.1.0.0
@@ -85,9 +83,10 @@ library
       TypeDirectedGeneric.C
       TypeDirectedGeneric.CPretty
       TypeDirectedGeneric.SExp
-      TypeDirectedGeneric.UntypedTargetLanguage
+      TypeDirectedGeneric.SystemF
       TypeDirectedGeneric.TransCommon
       TypeDirectedGeneric.Translation
+      TypeDirectedGeneric.UntypedTargetLanguage
   other-modules:
       Paths_gotrans
   hs-source-dirs:
