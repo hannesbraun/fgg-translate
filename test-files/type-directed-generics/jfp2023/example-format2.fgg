@@ -1,0 +1,37 @@
+/// TEST EVAL_GOOD: (1,2)  (1,2)
+// Figure 2
+package main
+
+import "fmt"
+
+func intToString(i int) string {
+    return fmt.Sprintf("%v", i)
+}
+type Num    struct { val int }
+type Format interface { format() string }
+type Pretty interface { format() string; pretty() string }
+
+func (this Num) format() string { return intToString(this.val) }
+func (this Num) pretty() string { return this.format() }
+
+func formatSome(x Format) string { return x.format() }
+
+func main() {
+  var s1 string = formatSome(Num{1})
+  var pr Pretty = Num{2}
+  var s2 string = formatSome(pr)
+}
+
+type Any interface {}
+type Pair[T Any, U Any] struct { left T; right U }
+
+func (this Pair[T Format, U Format]) format() string {
+  return "(" + this.left.format() + "," + this.right.format() + ")"
+}
+
+func main2() {
+  var p  Pair[Num, Num] = Pair[Num, Num]{ Num{1}, Num{2} }
+  var s1 string = p.format()
+  var s2 string = formatSome(p)
+  fmt.Printf("%v  %v", s1, s2)
+}

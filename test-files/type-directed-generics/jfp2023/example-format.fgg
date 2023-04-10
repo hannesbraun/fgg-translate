@@ -1,0 +1,24 @@
+/// TEST EVAL_GOOD: 1  2
+// Figure 1
+package main
+
+import "fmt"
+
+func intToString(i int) string {
+    return fmt.Sprintf("%v", i)
+}
+type Num    struct { val int }
+type Format interface { format() string }
+type Pretty interface { format() string; pretty() string }
+
+func (this Num) format() string { return intToString(this.val) }
+func (this Num) pretty() string { return this.format() }
+
+func formatSome(x Format) string { return x.format() }
+
+func main() {
+  var s1 string = formatSome(Num{1})
+  var pr Pretty = Num{2}
+  var s2 string = formatSome(pr)
+  fmt.Printf("%v  %v", s1, s2)
+}

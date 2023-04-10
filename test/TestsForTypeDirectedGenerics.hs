@@ -62,7 +62,7 @@ match x t = x `T.isInfixOf` t
 runTestForSpec :: FilePath -> Int -> TestSpec -> IO ()
 runTestForSpec path idx spec = do
   let parseCfg =
-        if "oopsla2022" `L.isInfixOf` path
+        if "oopsla2022" `L.isInfixOf` path || "jfp2023" `L.isInfixOf` path
         then ParserConfig ModernGenerics
         else ParserConfig OldstyleGenerics
   prog <- parseFile path parseCfg

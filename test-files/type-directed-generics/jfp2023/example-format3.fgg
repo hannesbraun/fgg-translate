@@ -1,0 +1,53 @@
+/// TEST EVAL_GOOD: 132  142
+// Figure 3
+package main
+
+import "fmt"
+
+func intToString(i int) string {
+    return fmt.Sprintf("%v", i)
+}
+type Num    struct { val int }
+type Format interface { format() string }
+type Pretty interface { format() string; pretty() string }
+
+func (this Num) format() string { return intToString(this.val) }
+func (this Num) pretty() string { return this.format() }
+
+func formatSome(x Format) string { return x.format() }
+
+func main() {
+  var s1 string = formatSome(Num{1})
+  var pr Pretty = Num{2}
+  var s2 string = formatSome(pr)
+}
+
+type Any interface {}
+type Pair[T Any, U Any] struct { left T; right U }
+
+func (this Pair[T Format, U Format]) format() string {
+  return "(" + this.left.format() + "," + this.right.format() + ")"
+}
+
+func main2() {
+  var p  Pair[Num, Num] = Pair[Num, Num]{ Num{1}, Num{2} }
+  var s1 string = p.format()
+  var s2 string = formatSome(p)
+}
+
+func (this Pair[T Format, U Format]) formatSep[S Format](s S) string {
+  return this.left.format() + s.format() + this.right.format()
+}
+
+type FormatSep interface { formatSep[S Format](s S) string }
+
+func formatSepSome(x FormatSep, s Format) string {
+	return x.formatSep[Format](s)
+}
+
+func main3 () {
+  var p Pair[Num, Num] = Pair[Num, Num]{ Num{1}, Num{2} }
+  var s1 string = p.formatSep[Num](Num{3}) // result: 132
+  var s2 string = formatSepSome(p,Num{4})  // result: 142
+  fmt.Printf("%v  %v", s1, s2)
+}
