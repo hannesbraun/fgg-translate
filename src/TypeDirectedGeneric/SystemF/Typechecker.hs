@@ -13,6 +13,7 @@ module TypeDirectedGeneric.SystemF.Typechecker (
   ) where
 
 import Common.Types
+import Common.Utils
 import Common.PrettyUtils
 import Prettyprinter
 import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
@@ -130,9 +131,17 @@ withNewVar :: VarName -> Ty -> T a -> T a
 withNewVar x ty comp =
   local (\env -> env { tce_vars = M.insert x ty (tce_vars env) }) comp
 
+withNewVars :: VarEnv -> T a -> T a
+withNewVars varEnv comp =
+  local (\env -> env { tce_vars = M.union varEnv (tce_vars env) }) comp
+
 withNewTyVar :: TyVarName -> T a -> T a
 withNewTyVar a comp =
   local (\env -> env { tce_tyvars = S.insert a (tce_tyvars env) }) comp
+
+withNewTyVars :: [TyVarName] -> T a -> T a
+withNewTyVars as comp =
+  local (\env -> env { tce_tyvars = S.union (S.fromList as) (tce_tyvars env) }) comp
 
 newtype T a = T { unT :: RWST TyCheckEnv () () (ExceptT TyCheckError TyCheckTracer) a }
     deriving ( Functor, Applicative, Monad, MonadReader TyCheckEnv, MonadState ()
@@ -142,17 +151,36 @@ failT :: String -> T a
 failT = throwError
 
 checkTyOk :: Ty -> T ()
-checkTyOk = undefined
+checkTyOk ty =
+  case ty of
+    TyVar a -> do
+      tenv <- readTyvars
+      unless (a `S.member` tenv) $
+        failT ("Unbound type variable " ++ prettyS a)
+    TyPrim _ -> pure ()
+    TyArrow ty1 ty2 -> do
+      checkTyOk ty1
+      checkTyOk ty2
+    TyConstr c tys -> do
+      forM_ tys checkTyOk
+      (tyvars, _) <- getDecl c
+      when (length tys /= length tyvars) $
+        failT ("Type arity mismatch: " ++ prettyS ty)
+    TyForall a ty ->
+      withNewTyVar a (checkTyOk ty)
 
 checkExp :: Exp -> Ty -> T ()
-checkExp = undefined
+checkExp e tyExpected = do
+  ty <- tyOfExp e
+  when (ty /= tyExpected) $
+    failT ("Expression " ++ prettyS e ++ " should have type " ++ prettyS tyExpected
+          ++ " but has type " ++ prettyS ty)
 
 tyOfExp :: Exp -> T Ty
 tyOfExp e = do
-  venv <- readVars
-  tenv <- readTyvars
   case e of
     ExpVar x -> do
+      venv <- readVars
       case M.lookup x venv of
         Nothing -> failT ("Unbound variable: " ++ prettyS x)
         Just t -> pure t
@@ -189,9 +217,26 @@ tyOfExp e = do
     ExpTyAbs a e -> do
       tyRes <- withNewTyVar a (tyOfExp e)
       pure (TyForall a tyRes)
-    ExpCase e clauses -> undefined
-    ExpBinOp e1 op e2 -> undefined
-    ExpUnOp op e -> undefined
+    ExpCase e [] -> failT ("Case with no clauses")
+    ExpCase e clauses -> do
+      ty <- tyOfExp e
+      clauseTys <- forM clauses (tyOfClause ty)
+      if not (allEq clauseTys)
+        then failT ("Clauses of case have different types: " ++ prettyS clauseTys)
+        else pure (head clauseTys)
+    ExpBinOp e1 op e2 -> do
+      ty1 <- tyOfExp e1
+      ty2 <- tyOfExp e2
+      let (tyArg, tyRes) = tyOfBinOp op
+      when (ty1 /= tyArg || ty2 /= tyArg) $
+        failT ("Invalid use of binary operator: " ++ prettyS e)
+      pure tyRes
+    ExpUnOp op e1 -> do
+      ty1 <- tyOfExp e1
+      let (tyArg, tyRes) = tyOfUnOp op
+      when (ty1 /= tyArg) $
+        failT ("Invalid use of unary operator: " ++ prettyS e)
+      pure tyRes
     ExpCond e1 e2 e3 -> do
       ty1 <- tyOfExp e1
       unless (ty1 == TyPrim PrimBool) $
@@ -208,11 +253,117 @@ tyOfExp e = do
     ExpFail _ _ -> let a = TyVarName "a" in pure $ TyForall a (TyVar a)
     ExpVoid -> pure $ TyPrim PrimVoid
 
+int :: Ty
+int = TyPrim PrimInt
 
-typeCheck :: Prog -> IO () -- crashes on type errors
-typeCheck _ = pure () -- FIXME
--- Decls:
--- data: check tyvars unique
+bool :: Ty
+bool = TyPrim PrimBool
+
+tyOfBinOp :: BinOp -> (Ty, Ty)
+tyOfBinOp op =
+  case op of
+    Plus -> (int, int)
+    Minus -> (int, int)
+    Mult -> (int, int)
+    Div -> (int, int)
+    Mod -> (int, int)
+    Equal -> (int, bool)
+    NotEqual -> (int, bool)
+    Lt -> (int, bool)
+    LtEqual -> (int, bool)
+    Gt -> (int, bool)
+    GtEqual -> (int, bool)
+    And -> (bool, bool)
+    Or -> (bool, bool)
+
+tyOfUnOp :: UnOp -> (Ty, Ty)
+tyOfUnOp Not = (bool, bool)
+
+tyOfClause :: Ty -> PatClause -> T Ty
+tyOfClause tyScrut (PatClause pat bodyE) = do
+  (tyPat, bindings) <- tyOfPat pat
+  when (tyScrut /= tyPat) $
+    failT ("Type of pattern " ++ prettyS pat ++ " is " ++ prettyS tyPat ++
+          ", but this does not match type of scrutinee " ++ prettyS tyScrut)
+  withNewVars bindings (tyOfExp bodyE)
+
+tyOfPat :: Pat -> T (Ty, VarEnv)
+tyOfPat topPat =
+  case topPat of
+    PatVar x ty -> do
+      checkTyOk ty
+      pure (ty, M.singleton x ty)
+    PatWild ty -> do
+      checkTyOk ty
+      pure (ty, M.empty)
+    PatConstr c tyargs pats -> do
+      (tyvars, fieldTys) <- getDecl c
+      tySubst <-
+        mkTySubst tyvars tyargs ("Type arity mismatch in constructor pattern: " ++ prettyS topPat)
+      when (length pats /= length fieldTys) $
+        failT ("Arity mismatch in constructor pattern: " ++ prettyS topPat)
+      env <- loop (zip pats (map (applyTySubst tySubst) fieldTys))
+      pure (TyConstr c tyargs, env)
+  where
+    loop :: [(Pat, Ty)] -> T VarEnv
+    loop [] = pure M.empty
+    loop ((p, tyExpected) : rest) = do
+      (ty, env) <- tyOfPat p
+      restEnv <- loop rest
+      let inBoth = M.intersection env restEnv
+      when (M.size inBoth /= 0) $
+        failT ("Duplicate variables in pattern " ++ prettyS topPat)
+      pure (M.union env restEnv)
+
+checkDecl :: Decl -> T ()
+checkDecl decl =
+  case decl of
+    DeclData c tyvars tys -> do
+      when (length tyvars /= S.size (S.fromList tyvars)) $
+        failT ("Duplicate type variables in " ++ prettyS decl)
+      withNewTyVars tyvars $ forM_ tys checkTyOk
+    DeclFun f ty _ -> do
+      checkTyOk ty
+
+checkDeclBody :: Decl -> T ()
+checkDeclBody decl =
+  case decl of
+    DeclData _ _ _ -> pure ()
+    DeclFun _ ty body -> checkExp body ty
+
+emptyTyCheckEnv :: TyCheckEnv
+emptyTyCheckEnv =
+  TyCheckEnv
+  { tce_decls = M.empty
+  , tce_tyvars = S.empty
+  , tce_vars = M.empty
+  }
+
+typeCheck :: Prog -> IO Ty -- crashes on type errors
+typeCheck (Prog decls mainE) = do
+  initEnv <- foldM addToEnv emptyTyCheckEnv decls
+  let result :: (Either TyCheckError (Ty, ()), DL.DList T.Text)
+      result = runWriter $ runExceptT $ evalRWST (unT check) initEnv ()
+  case result of
+    (Left err, _trace) -> fail err
+    (Right (ty, ()), _trace) -> pure ty
+  where
+    addToEnv :: TyCheckEnv -> Decl -> IO TyCheckEnv
+    addToEnv env decl =
+      case decl of
+        DeclData c tyvars tys ->
+          case M.lookup c (tce_decls env) of
+            Just _ -> fail ("Duplicate constructor declaration: " ++ prettyS c)
+            Nothing -> pure $ env { tce_decls = (M.insert c (tyvars, tys) (tce_decls env)) }
+        DeclFun f ty _ ->
+          case M.lookup f (tce_vars env) of
+            Just _ -> fail ("Duplicate function declaration: " ++ prettyS f)
+            Nothing -> pure $ env { tce_vars = (M.insert f ty (tce_vars env)) }
+    check :: T Ty
+    check = do
+      forM_ decls checkDecl
+      forM_ decls checkDeclBody
+      tyOfExp mainE
 
 erase :: Prog -> TL.Prog
 erase = undefined -- FIXME

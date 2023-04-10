@@ -105,11 +105,14 @@ instance PrettyPrec Pat where
       PatVar v t ->
         withParens prec funAppPrec $
         pretty v <> text ":" <> pretty t
-      PatWild -> text "_"
-      PatConstr c pats ->
+      PatWild t ->
+        withParens prec funAppPrec $
+        text "_:" <> pretty t
+      PatConstr c tys pats ->
         withParens prec funAppPrec $
         let pats' = map (prettyPrec funAppPrec) pats
-        in pretty c <> braces (sepBy space pats')
+            tys' = map (prettyPrec funAppPrec) tys
+        in pretty c <> text "@" <> (sepBy space tys') <> braces (sepBy space pats')
 
 instance Pretty PrimTy where
   pretty t =

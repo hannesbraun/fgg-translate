@@ -76,3 +76,10 @@ outputTrace trace =
            (first:rest) ->
              T.unlines (first : map (\x -> spaces <> x) rest)
            _ -> t
+
+allEq :: Eq a => [a] -> Bool
+allEq [] = True
+allEq (x:xs) = loop x xs
+  where
+    loop _ [] = True
+    loop x (y:ys) = x == y && loop x ys

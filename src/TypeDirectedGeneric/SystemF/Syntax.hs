@@ -64,8 +64,8 @@ data PatClause
 
 data Pat
     = PatVar VarName Ty
-    | PatWild
-    | PatConstr ConstrName [Pat]
+    | PatWild Ty
+    | PatConstr ConstrName [Ty] [Pat]
     deriving (Show, Data, Typeable)
 
 data PrimTy
