@@ -6,6 +6,8 @@ import {-@ HTF_TESTS @-} Common.FGParser
 import {-@ HTF_TESTS @-} Common.FGGParser
 import {-@ HTF_TESTS @-} Common.FGGAST
 import {-@ HTF_TESTS @-} TypeDirectedGeneric.UntypedTargetLanguage
+import {-@ HTF_TESTS @-} TypeDirectedGeneric.SystemF.Typechecker
+import {-@ HTF_TESTS @-} TypeDirectedGeneric.SystemF.Syntax
 import Common.Driver
 import Common.Types
 import TestsForTypeDirectedGenerics

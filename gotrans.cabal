@@ -84,6 +84,9 @@ library
       TypeDirectedGeneric.CPretty
       TypeDirectedGeneric.SExp
       TypeDirectedGeneric.SystemF
+      TypeDirectedGeneric.SystemF.Pretty
+      TypeDirectedGeneric.SystemF.Syntax
+      TypeDirectedGeneric.SystemF.Typechecker
       TypeDirectedGeneric.TransCommon
       TypeDirectedGeneric.Translation
       TypeDirectedGeneric.UntypedTargetLanguage

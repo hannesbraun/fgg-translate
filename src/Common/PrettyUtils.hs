@@ -65,4 +65,7 @@ precBinOp op =
 newtype CommaList a = CommaList [a]
 
 instance Pretty a => Pretty (CommaList a) where
-  pretty (CommaList l) = sepBy (text ", ") (map pretty l)
+  pretty (CommaList l) = prettyCommas l
+
+prettyCommas :: Pretty a => [a] -> Doc b
+prettyCommas l = sepBy (text ", ") (map pretty l)
