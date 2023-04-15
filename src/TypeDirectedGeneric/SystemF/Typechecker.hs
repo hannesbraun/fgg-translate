@@ -8,7 +8,7 @@
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
 module TypeDirectedGeneric.SystemF.Typechecker (
 
-  typeCheck, erase, htf_thisModulesTests
+  runT, typeCheck, erase, htf_thisModulesTests
 
   ) where
 
@@ -147,6 +147,13 @@ newtype T a = T { unT :: RWST TyCheckEnv () () (ExceptT TyCheckError TyCheckTrac
     deriving ( Functor, Applicative, Monad, MonadReader TyCheckEnv, MonadState ()
              , MonadError String)
 
+runT :: T a -> Either String a
+runT action =
+  let result = runWriter $ runExceptT $ evalRWST (unT action) emptyTyCheckEnv ()
+  in case result of
+       (Left err, _trace) -> Left err
+       (Right (x, ()), _trace) -> Right x
+
 failT :: String -> T a
 failT = throwError
 
@@ -203,7 +210,8 @@ tyOfExp e = do
           else failT ("Function of type " ++ prettyS ty1 ++ " applied to value of type " ++
                        prettyS ty2)
         _ ->
-          failT ("Left-hand side of function application is not a function type: " ++ prettyS ty1)
+          failT ("Left-hand side of function application has not a function type but " ++
+                 prettyS ty1 ++ "\n\n" ++ prettyS e)
     ExpAbs x ty e -> do
       checkTyOk ty
       tyRes <- withNewVar x ty (tyOfExp e)
@@ -277,7 +285,10 @@ tyOfBinOp op =
     Or -> (bool, bool)
 
 tyOfUnOp :: UnOp -> (Ty, Ty)
-tyOfUnOp Not = (bool, bool)
+tyOfUnOp op =
+  case op of
+    Not -> (bool, bool)
+    Inv -> (int, int)
 
 tyOfClause :: Ty -> PatClause -> T Ty
 tyOfClause tyScrut (PatClause pat bodyE) = do
@@ -339,25 +350,22 @@ emptyTyCheckEnv =
   , tce_vars = M.empty
   }
 
-typeCheck :: Prog -> IO Ty -- crashes on type errors
+typeCheck :: Prog -> T Ty -- crashes on type errors
 typeCheck (Prog decls mainE) = do
-  initEnv <- foldM addToEnv emptyTyCheckEnv decls
-  let result :: (Either TyCheckError (Ty, ()), DL.DList T.Text)
-      result = runWriter $ runExceptT $ evalRWST (unT check) initEnv ()
-  case result of
-    (Left err, _trace) -> fail err
-    (Right (ty, ()), _trace) -> pure ty
+  initEnv <- ask
+  env <- foldM addToEnv initEnv decls
+  local (const env) check
   where
-    addToEnv :: TyCheckEnv -> Decl -> IO TyCheckEnv
+    addToEnv :: TyCheckEnv -> Decl -> T TyCheckEnv
     addToEnv env decl =
       case decl of
         DeclData c tyvars tys ->
           case M.lookup c (tce_decls env) of
-            Just _ -> fail ("Duplicate constructor declaration: " ++ prettyS c)
+            Just _ -> failT ("Duplicate constructor declaration: " ++ prettyS c)
             Nothing -> pure $ env { tce_decls = (M.insert c (tyvars, tys) (tce_decls env)) }
         DeclFun f ty _ ->
           case M.lookup f (tce_vars env) of
-            Just _ -> fail ("Duplicate function declaration: " ++ prettyS f)
+            Just _ -> failT ("Duplicate function declaration: " ++ prettyS f)
             Nothing -> pure $ env { tce_vars = (M.insert f ty (tce_vars env)) }
     check :: T Ty
     check = do

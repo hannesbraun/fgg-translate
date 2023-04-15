@@ -159,6 +159,7 @@ expToSExp exp =
         SExpVar $
         case op of
           Not -> "not"
+          Inv -> "-"
 
 bindingToSExp :: Binding -> SExp
 bindingToSExp (Binding (Var v) pats body) =
@@ -348,6 +349,7 @@ precUnOp :: UnOp -> Int
 precUnOp op =
     case op of
       Not -> funAppPrec
+      Inv -> funAppPrec
 
 instance Pretty Var where
   pretty (Var v) = text v
@@ -432,3 +434,4 @@ instance Pretty PatClause where
 
 instance Pretty UnOp where
     pretty Not = "not"
+    pretty Inv = "-"

@@ -196,9 +196,11 @@ precUnOp :: UnOp -> Int
 precUnOp op =
     case op of
       Not -> funAppPrec
+      Inv -> funAppPrec
 
 instance Pretty UnOp where
     pretty Not = "not"
+    pretty Inv = "-"
 
 instance Pretty Pat where
     pretty (Pat name vars) =

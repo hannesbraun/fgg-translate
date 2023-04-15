@@ -79,8 +79,10 @@ instance PrettyPrec Exp where
         pretty e <> dot <> parens (pretty t)
       BinOp op e1 e2 ->
         prettyPrec (precBinOp op) e1 <+> pretty op <+> prettyPrec (precBinOp op) e2
-      UnOp Not e ->
-        text "!" <> prettyPrec maxPrec e
+      UnOp op e ->
+        (case op of
+          Not -> text "!"
+          Inv -> text "-") <> prettyPrec maxPrec e
       Cond e1 e2 e3 ->
         withParens prec maxPrec $
         pretty e1 <+> text "?" <+> pretty e2 <+> text ":" <+> pretty e3

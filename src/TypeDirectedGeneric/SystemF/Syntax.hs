@@ -27,14 +27,26 @@ import Data.String
 import Test.Framework
 
 newtype VarName = VarName { unVarName :: T.Text }
-    deriving (Eq, Ord, Show, Data, IsString, Typeable)
+    deriving (Eq, Ord, Data, IsString, Typeable)
+
+instance Show VarName where
+  showsPrec p (VarName t) =
+    showParen (p > 10) $ showString "VarName " . showString (T.unpack t)
 
 newtype TyVarName = TyVarName { unTyVarName :: T.Text }
-    deriving (Eq, Ord, Show, Data, IsString, Typeable)
+    deriving (Eq, Ord, Data, IsString, Typeable)
+
+instance Show TyVarName where
+  showsPrec p (TyVarName t) =
+    showParen (p > 10) $ showString "TyVarName " . showString (T.unpack t)
 
 -- Constructors
 newtype ConstrName = ConstrName { unConstrName :: T.Text }
-    deriving (Eq, Ord, Show, Data, IsString, Typeable)
+    deriving (Eq, Ord, Data, IsString, Typeable)
+
+instance Show ConstrName where
+  showsPrec p (ConstrName t) =
+    showParen (p > 10) $ showString "ConstrName " . showString (T.unpack t)
 
 data Exp
     = ExpVar VarName
@@ -53,20 +65,20 @@ data Exp
     | ExpChar Char
     | ExpFail T.Text [Exp]
     | ExpVoid
-    deriving (Show, Data, Typeable)
+    deriving (Eq, Show, Data, Typeable)
 
 instance IsString Exp where
   fromString s = ExpVar (VarName (T.pack s))
 
 data PatClause
     = PatClause Pat Exp
-    deriving (Show, Data, Typeable)
+    deriving (Eq, Show, Data, Typeable)
 
 data Pat
     = PatVar VarName Ty
     | PatWild Ty
     | PatConstr ConstrName [Ty] [Pat]
-    deriving (Show, Data, Typeable)
+    deriving (Eq, Show, Data, Typeable)
 
 data PrimTy
   = PrimInt

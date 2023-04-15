@@ -663,11 +663,16 @@ transExp' tyEnv varEnv (G.BinOp op exp1 exp2) = do
             ", " ++ prettyS tau2
     Nothing ->
       failT ("BUG: Unknown binary operator: " ++ show op)
-transExp' tyEnv varEnv (G.UnOp Not exp) = do
+transExp' tyEnv varEnv (G.UnOp op exp) = do
   (tau, e) <- transExp tyEnv varEnv exp
-  when (tau /= tyBuiltinToType TyBool) $
-    failT ("Invalid type for not: " ++ prettyS tau)
-  pure (tau, TL.ExpUnOp Not e)
+  case op of
+    Not ->
+      when (tau /= tyBuiltinToType TyBool) $
+        failT ("Invalid type for not: " ++ prettyS tau)
+    Inv ->
+      when (tau /= tyBuiltinToType TyInt) $
+        failT ("Invalid type for -: " ++ prettyS tau)
+  pure (tau, TL.ExpUnOp op e)
 transExp' tyEnv varEnv (G.Cond exp1 exp2 exp3) = do
   (tau1, e1) <- transExp tyEnv varEnv exp1
   (tau2, e2) <- transExp tyEnv varEnv exp2

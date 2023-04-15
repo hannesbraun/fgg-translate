@@ -83,3 +83,7 @@ allEq (x:xs) = loop x xs
   where
     loop _ [] = True
     loop x (y:ys) = x == y && loop x ys
+
+eitherFail :: MonadFail m => Either String a -> m a
+eitherFail (Left err) = fail err
+eitherFail (Right x) = pure x

@@ -42,6 +42,7 @@ precUnOp :: UnOp -> Int
 precUnOp op =
     case op of
       Not -> funAppPrec
+      Inv -> funAppPrec
 
 instance Pretty Exp where
     pretty = prettyPrec 0
@@ -72,8 +73,8 @@ instance PrettyPrec Exp where
         withParens prec 1 $
         let e' = pretty e
             clauses' = map pretty clauses
-        in align (text "case" <+> e' <+> text "of [" <> line <>
-                  indent 2 (vcat clauses') <> line <> indent (-2) (text "]"))
+        in align (text "case" <+> e' <+> text "of" <> line <>
+                  indent 2 (vcat clauses') <> line)
       ExpBinOp e1 op e2 ->
         prettyPrec (precBinOp op) e1 <+> pretty op <+> prettyPrec (precBinOp op) e2
       ExpUnOp op e ->
@@ -112,17 +113,17 @@ instance PrettyPrec Pat where
         withParens prec funAppPrec $
         let pats' = map (prettyPrec funAppPrec) pats
             tys' = map (prettyPrec funAppPrec) tys
-        in pretty c <> text "@" <> (sepBy space tys') <> braces (sepBy space pats')
+        in pretty c <> text "@" <> (sepBy space tys') <> braces (sepBy comma pats')
 
 instance Pretty PrimTy where
   pretty t =
     text $
     case t of
-      PrimInt -> "int"
-      PrimBool -> "bool"
-      PrimString -> "string"
-      PrimChar -> "char"
-      PrimVoid -> "void"
+      PrimInt -> "Int"
+      PrimBool -> "Bool"
+      PrimString -> "String"
+      PrimChar -> "Char"
+      PrimVoid -> "Void"
 
 instance Pretty Ty where
   pretty = prettyPrec 0
