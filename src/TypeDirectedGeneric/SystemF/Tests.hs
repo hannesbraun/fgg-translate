@@ -5,7 +5,9 @@ module TypeDirectedGeneric.SystemF.Tests (htf_thisModulesTests) where
 
 import TypeDirectedGeneric.SystemF.Parser
 import TypeDirectedGeneric.SystemF.Syntax
+import TypeDirectedGeneric.SystemF.Erasure
 import TypeDirectedGeneric.SystemF.Typechecker
+import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
 import Common.Utils
 
 import Test.Framework
@@ -20,13 +22,22 @@ parseOrDie parser src =
       putStrLn (T.unpack src)
       fail (T.unpack err)
 
+run :: Prog -> IO T.Text
+run p = do
+  let tl = erase p
+  res <- TL.evalProg "/tmp/fgg-target.rkt" "" tl
+  case res of
+    Left err -> fail ("Evaluating System F program failed: " ++ T.unpack err)
+    Right x -> pure x
+
 check :: T.Text -> T.Text -> T.Text -> IO ()
-check src tySrc _res = do
+check src tySrc res = do
   ty <- parseOrDie parseTy tySrc
   prog <- parseOrDie parseProg src
   givenTy <- eitherFail $ runT (typeCheck prog)
   assertEqual ty givenTy
-  -- FIXME: run
+  givenRes <- run prog
+  assertEqual res givenRes
 
 checkIlltyped :: T.Text -> IO ()
 checkIlltyped src = do
@@ -42,12 +53,12 @@ test_fac = do
   checkIlltyped progWrong
   where
     prog = [r|
-fun fac : Int -> Int = \i:Int . if i == 0 then 1 else fac (i - 1)
+fun fac : Int -> Int = \i:Int . if i == 0 then 1 else i * fac (i - 1)
 
 let main = fac 4
 |]
     progWrong = [r|
-fun fac : Int -> Bool = \i:Int . if i == 0 then 1 else fac (i - 1)
+fun fac : Int -> Bool = \i:Int . if i == 0 then 1 else i * fac (i - 1)
 
 let main = fac 4
 |]
@@ -72,7 +83,7 @@ let main = getSome @Bool (mkPair @Int @Bool 1 True)
 
 test_poly :: IO ()
 test_poly = do
-  check prog1 "Bool" "True"
+  check prog1 "Bool" "#t"
   checkIlltyped prog2
   where
     prog1 = [r|

@@ -84,6 +84,7 @@ library
       TypeDirectedGeneric.CPretty
       TypeDirectedGeneric.SExp
       TypeDirectedGeneric.SystemF
+      TypeDirectedGeneric.SystemF.Erasure
       TypeDirectedGeneric.SystemF.Parser
       TypeDirectedGeneric.SystemF.Pretty
       TypeDirectedGeneric.SystemF.Syntax

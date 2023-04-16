@@ -1,26 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# OPTIONS_GHC -Wno-unused-imports #-}
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
 module TypeDirectedGeneric.SystemF.Syntax where
 
 import Common.Types
-import Common.PrettyUtils
-import Prettyprinter
-import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
 
-import Data.Set (Set)
-import qualified Data.Set as S
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
-import qualified Data.DList as DL
-import Control.Monad.Identity
-import Control.Monad.Except
-import Control.Monad.Writer
-import Control.Monad.RWS.Strict
-import qualified Data.List as List
-import Data.Maybe
 import Data.Data hiding (Constr)
 import qualified Data.Text as T
 import Data.String

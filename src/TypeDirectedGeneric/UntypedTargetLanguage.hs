@@ -6,8 +6,7 @@
 module TypeDirectedGeneric.UntypedTargetLanguage (
 
     Var(..), Constr(..), PatClause(..), Pat(..), Binding(..), Prog(..)
-  , Exp(ExpVar, ExpConstr, ExpCase, ExpBinOp, ExpUnOp, ExpCond, ExpInt,
-       ExpBool, ExpStr, ExpChar, ExpFail, ExpList, ExpVoid)
+  , Exp(..)
   , expApp, expAppMany, expAbs, expAbsMany
   , evalProg, pairConstr, mkPair, tupleConstr, mkTuple, tuplePat, matchEq, matchEqFull
   , fstOfPair, sndOfPair, fstOfTriple, sndOfTriple, thdOfTriple, mkTriple, idFun, toString

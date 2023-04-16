@@ -1,28 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# OPTIONS_GHC -Wno-unused-imports #-}
 module TypeDirectedGeneric.SystemF.Pretty () where
 
 import Common.Types
 import Common.PrettyUtils
 import Prettyprinter
-import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
-
-import Data.Set (Set)
-import qualified Data.Set as S
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as M
-import qualified Data.DList as DL
-import Control.Monad.Identity
-import Control.Monad.Except
-import Control.Monad.Writer
-import Control.Monad.RWS.Strict
-import qualified Data.List as List
-import Data.Maybe
-import Data.Data hiding (Constr)
-import qualified Data.Text as T
-import Data.String
 
 import TypeDirectedGeneric.SystemF.Syntax
 
@@ -92,6 +75,28 @@ instance PrettyPrec Exp where
         text "error" <+> pretty (show s) <+>
         sepBy space (map (prettyPrec funAppPrec) args)
       ExpVoid -> text "void"
+
+instance Pretty BinOp where
+    pretty op =
+      text $
+      case op of
+        Plus -> "+"
+        Minus -> "-"
+        Mult -> "*"
+        Div -> "/"
+        Mod -> "%"
+        Equal -> "=="
+        NotEqual -> "/="
+        Lt -> "<"
+        LtEqual -> "<="
+        Gt -> ">"
+        GtEqual -> ">="
+        And -> "&&"
+        Or -> "||"
+
+instance Pretty UnOp where
+    pretty Not = "!"
+    pretty Inv = "-"
 
 instance Pretty PatClause where
   pretty (PatClause pat exp) =

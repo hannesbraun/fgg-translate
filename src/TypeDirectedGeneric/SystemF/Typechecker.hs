@@ -2,21 +2,18 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-{-# OPTIONS_GHC -Wno-unused-matches #-}
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
 module TypeDirectedGeneric.SystemF.Typechecker (
 
-  runT, typeCheck, erase, htf_thisModulesTests
+  runT, typeCheck, htf_thisModulesTests
 
   ) where
 
 import Common.Types
 import Common.Utils
 import Common.PrettyUtils
-import Prettyprinter
-import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
+import TypeDirectedGeneric.SystemF.Syntax
+import TypeDirectedGeneric.SystemF.Pretty ()
 
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -28,18 +25,12 @@ import Control.Monad.Except
 import Control.Monad.Writer
 import Control.Monad.RWS.Strict
 import Control.Monad.State.Strict
-import qualified Data.List as List
 import Data.Maybe
-import Data.Data hiding (Constr)
 import qualified Data.Text as T
-import Data.String
 import Data.Generics
 import Test.Framework
 
-import TypeDirectedGeneric.SystemF.Syntax
-import TypeDirectedGeneric.SystemF.Pretty
-
-newtype TySubst = TySubst { unTySubst :: Map TyVarName Ty }
+newtype TySubst = TySubst { _unTySubst :: Map TyVarName Ty }
 
 singleTySubst :: TyVarName -> Ty -> TySubst
 singleTySubst a ty = TySubst (M.singleton a ty)
@@ -225,7 +216,7 @@ tyOfExp e = do
     ExpTyAbs a e -> do
       tyRes <- withNewTyVar a (tyOfExp e)
       pure (TyForall a tyRes)
-    ExpCase e [] -> failT ("Case with no clauses")
+    ExpCase _ [] -> failT ("Case with no clauses")
     ExpCase e clauses -> do
       ty <- tyOfExp e
       clauseTys <- forM clauses (tyOfClause ty)
@@ -320,6 +311,9 @@ tyOfPat topPat =
     loop [] = pure M.empty
     loop ((p, tyExpected) : rest) = do
       (ty, env) <- tyOfPat p
+      when (ty /= tyExpected) $
+        failT ("Pattern " ++ prettyS p ++ " should have type " ++ prettyS tyExpected ++
+               ", but its type is " ++ prettyS ty)
       restEnv <- loop rest
       let inBoth = M.intersection env restEnv
       when (M.size inBoth /= 0) $
@@ -329,11 +323,11 @@ tyOfPat topPat =
 checkDecl :: Decl -> T ()
 checkDecl decl =
   case decl of
-    DeclData c tyvars tys -> do
+    DeclData _ tyvars tys -> do
       when (length tyvars /= S.size (S.fromList tyvars)) $
         failT ("Duplicate type variables in " ++ prettyS decl)
       withNewTyVars tyvars $ forM_ tys checkTyOk
-    DeclFun f ty _ -> do
+    DeclFun _ ty _ -> do
       checkTyOk ty
 
 checkDeclBody :: Decl -> T ()
@@ -372,6 +366,3 @@ typeCheck (Prog decls mainE) = do
       forM_ decls checkDecl
       forM_ decls checkDeclBody
       tyOfExp mainE
-
-erase :: Prog -> TL.Prog
-erase = undefined -- FIXME
