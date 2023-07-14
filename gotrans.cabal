@@ -1,14 +1,14 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.35.1.
 --
 -- see: https://github.com/sol/hpack
 
 name:           gotrans
 version:        0.1.0.0
 description:    Translation from Featherweight (Generic) Go to various target languages
-author:         Anonymous
-maintainer:     Anonymous
+author:         Stefan Wehr
+maintainer:     Stefan Wehr
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
