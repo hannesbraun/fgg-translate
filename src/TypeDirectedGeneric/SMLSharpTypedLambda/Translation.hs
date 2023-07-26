@@ -5,7 +5,7 @@ import TypeDirectedGeneric.TransCommon
 import qualified TypeDirectedGeneric.SystemF as SF
 import qualified TypeDirectedGeneric.SMLSharpTypedLambda.Language as SML
 
---translateDeclaration :: SF.Declaration -> T SML.TLDecl
+--translateDeclaration :: SF.Decl -> T SML.TLDecl
 --translateDeclaration _ = failT "Internal error"
 
 translateExpression :: SF.Exp -> T SML.TLExp
