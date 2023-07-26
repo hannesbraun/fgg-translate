@@ -61,7 +61,6 @@ library
       TypeDirectedGeneric.SMLSharpTypedLambda.Translation
       TypeDirectedGeneric.SystemF
       TypeDirectedGeneric.SystemF.Erasure
-      TypeDirectedGeneric.SystemF.Interpreter
       TypeDirectedGeneric.SystemF.Parser
       TypeDirectedGeneric.SystemF.Pretty
       TypeDirectedGeneric.SystemF.Syntax

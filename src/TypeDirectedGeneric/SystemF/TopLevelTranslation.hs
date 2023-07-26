@@ -1,4 +1,4 @@
-module TypeDirectedGeneric.SystemF.TopLevelTranslation (runTranslation, runTranslation', runInterpretation) where
+module TypeDirectedGeneric.SystemF.TopLevelTranslation (runTranslation, runTranslation') where
 
 import System.IO
 import System.Exit
@@ -9,14 +9,12 @@ import Common.Utils
 import qualified Common.FGGAST as G
 import TypeDirectedGeneric.TransCommon
 
-import qualified TypeDirectedGeneric.SystemF as SystemF
 import qualified TypeDirectedGeneric.SystemF.Erasure as Erasure
-import qualified TypeDirectedGeneric.SystemF.Interpreter as Interpreter
 import qualified TypeDirectedGeneric.SystemF.Translation as SystemFTrans
 import qualified TypeDirectedGeneric.SystemF.Typechecker as Typechecker
 import qualified TypeDirectedGeneric.UntypedTargetLanguage as UntypedTL
 
--- Translate Go to SystemF, then to TypedLambda (SML#)
+-- Translate Go to System F, then to Racket (while performing type erasure)
 topLevelTranslate :: G.Program -> T UntypedTL.Prog
 topLevelTranslate programGo = do
     programSystemF <- SystemFTrans.translateProgram programGo
@@ -50,27 +48,3 @@ runTranslation traceFlag header filePath prog = do
             hPutStrLn stderr ("Typechecking " ++ filePath ++ " failed: " ++ err)
             exitWith (ExitFailure 1)
     pure (header <> UntypedTL.translateProg T.empty tProg)
-
-
-runTransSystemF :: G.Program -> (Either TransError SystemF.Prog, [T.Text])
-runTransSystemF goProgram =
-    let config = TransConfig {
-            tc_freshVarPrefix = T.pack "x-",
-            tc_assertSubType = \_ _ _ -> pure (),
-            tc_checkInst = \_ _ _ -> pure (Right ())
-        }
-    in  genRunTrans config goProgram SystemFTrans.translateProgram
-
-runInterpretation :: TraceFlag -> FilePath -> G.Program -> IO T.Text
-runInterpretation traceFlag filePath prog = do
-    let (result, trace) = runTransSystemF prog
-    case traceFlag of
-        TraceOn -> outputTrace trace
-        TraceOff -> pure ()
-    tProg <-
-        case result of
-        Right p -> pure p
-        Left err -> do
-            hPutStrLn stderr ("Typechecking " ++ filePath ++ " failed: " ++ err)
-            exitWith (ExitFailure 1)
-    pure $ T.pack $ Interpreter.interpretProgram tProg

@@ -20,11 +20,11 @@ import qualified Control.Exception as E
 
 data Target
     = TargetParse | TargetParseGeneric | TargetSyntaxAST | TargetSyntax
-    | TargetType | TargetTypeGeneric | TargetTypeSystemF | TargetSystemFInterpreter
+    | TargetType | TargetTypeGeneric | TargetTypeSystemF
             deriving (Show)
 
 targets :: String
-targets = "'parse', 'parse-generic', 'syntax', 'type', 'type-generic', 'type-systemf', 'interpret-systemf'"
+targets = "'parse', 'parse-generic', 'syntax', 'type', 'type-generic', 'type-systemf'"
 
 parseTarget :: ReadM Target
 parseTarget =
@@ -37,7 +37,6 @@ parseTarget =
           "type" -> Right TargetType
           "type-generic" -> Right TargetTypeGeneric
           "type-systemf" -> Right TargetTypeSystemF
-          "interpret-systemf" -> Right TargetSystemFInterpreter
           _ -> Left ("Unknown target. Supported: " ++ targets)
 
 data Args
@@ -130,14 +129,6 @@ runTypeDirectedSystemF args = do
     goProg <- FggP.parseFile (a_inputFile args) parserCfg
     Sf.runTranslation (a_trace args) auto (a_inputFile args) goProg
 
-runSystemFInterpreter :: Args -> IO ()
-runSystemFInterpreter args = do
-    let parserCfg = FggP.ParserConfig (a_genericsSyntax args)
-    goProg <- FggP.parseFile (a_inputFile args) parserCfg
-    interpreterOutput <- Sf.runInterpretation (a_trace args) (a_inputFile args) goProg
-    interpreterOutput <- E.evaluate interpreterOutput
-    putStrLn $ T.unpack interpreterOutput
-
 driverRun :: Args -> IO ()
 driverRun args = do
   target <- getTarget
@@ -154,7 +145,6 @@ driverRun args = do
     TargetType -> fail "type-directed translation not implemented yet"
     TargetTypeGeneric -> runTypeDirectedGeneric args
     TargetTypeSystemF -> runTypeDirectedSystemF args
-    TargetSystemFInterpreter -> runSystemFInterpreter args
   where
     getTarget =
         case a_target args of
