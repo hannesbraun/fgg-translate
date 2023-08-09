@@ -389,7 +389,8 @@ generateCoercionAbs' tyEnv originalType targetType = do
             translatedTypeArgs <- mapM (translateType tyEnv) typeArgs
             methodSpecs <- pure $ if_methods iface
             coercions <- mapM (\(G.MeSpec meName _signature) -> do
-                    (_, coerced) <- methodCallOnType tyEnv meName originalExp Nothing originalType Nothing
+                    emptyVarEnv <- mkVarEnv []
+                    (_, coerced) <- methodCallOnType emptyVarEnv tyEnv meName originalExp Nothing originalType Nothing
                     pure coerced
                 ) methodSpecs
             constr <- pure $ TL.ExpConstr (TL.ConstrName $ interfacePrefix <> (G.unTyName ifaceName)) translatedTypeArgs coercions
@@ -410,9 +411,10 @@ translateBindings varEnv tyEnv ((name, ty, exp):otherBindings) mainExp = withCtx
     translatedName <- pure $ translateVarName name
     (expressionType, translatedExpression) <- withCtx "translation of expression to bind" $ translateExpression varEnv tyEnv exp
     bindingType <- case ty of
-        Just x -> case x of
-            G.TyVar tyVarName -> lookupTyVar tyVarName tyEnv
-            G.TyNamed _ _ -> pure x
+        --Just x -> case x of
+        --    G.TyVar tyVarName -> lookupTyVar tyVarName tyEnv
+        --    G.TyNamed _ _ -> pure x
+        Just x -> pure x
         Nothing -> pure expressionType
     coercedExpression <- if bindingType /= expressionType
         then withCtx "coercion to binding type" $ generateCoercion tyEnv (expressionType, translatedExpression) bindingType
@@ -447,12 +449,21 @@ coerceArgument tyEnv source targetType = do
             when (not sameStruct) $ failT $ "Cannot supply " ++ prettyS sourceName ++ " when " ++ prettyS sourceName ++ " is expected"
             pure source
         (TyKindTyVar _, _) -> pure source -- If this dosn't work, the translation should already fail on the coercion arguments
+        (TyKindIface _ _, TyKindTyVar tyVarName) -> do
+            resolved <- lookupTyVar tyVarName tyEnv
+            tyName <- case resolved of
+                G.TyNamed name _ -> pure name
+                _ -> failT ("Type variable " ++ (prettyS tyVarName) ++ " did not resolve to a named type")
+            coercionAbs <- pure $ getCoercionAbs tyVarName tyName
+            substitudedSource <- pure $ (resolved, (TL.ExpApp coercionAbs (snd source)))
+            coercedExp <- generateCoercion tyEnv substitudedSource targetType
+            pure (targetType, coercedExp)
         _ -> do
             coercedExp <- generateCoercion tyEnv source targetType
             pure (targetType, coercedExp)
 
-methodCall :: TyEnv -> TL.Exp -> Maybe (TL.Exp, G.Type, [G.Type], G.Type) -> Maybe [(G.Type, TL.Exp)] -> [G.Type] -> Maybe [G.Type] -> [G.Type] -> [G.Type] -> T TL.Exp
-methodCall tyEnv methodVar receiver translatedArgs expectedArgTypes methodTypeArgs receiverConstraints methodConstraints = withCtx "methodCall" $ do
+methodCall :: VarEnv -> TyEnv -> TL.Exp -> Maybe (TL.Exp, G.Type, [G.Type], G.Type) -> Maybe [G.Exp] -> [G.Type] -> Maybe [G.Type] -> [G.Type] -> [G.Type] -> T TL.Exp
+methodCall varEnv tyEnv methodVar receiver args expectedArgTypes methodTypeArgs receiverConstraints methodConstraints = withCtx "methodCall" $ do
     receiverApplied <- case receiver of
                         Just (translatedReceiverExpression, receiverType, receiverTypeArgs, expectedReceiverType) -> withCtx "receiverArgs" $ do
                             -- apply type arguments from receiver
@@ -476,16 +487,17 @@ methodCall tyEnv methodVar receiver translatedArgs expectedArgTypes methodTypeAr
             methodCoercions <- pure $ TL.ExpConstr (tupleName $ length generatedCoercions) coercionTypes generatedCoercions
             pure $ TL.ExpApp methodTypesApplied methodCoercions
         Nothing -> pure receiverApplied
-    argsApplied <- case translatedArgs of
-        Just translatedArgs -> withCtx "funArgs" $ do
+    argsApplied <- case args of
+        Just args -> withCtx "funArgs" $ do
+            translatedArgs <- mapM (translateExpression varEnv tyEnv) args
             translatedArgs <- coerceArguments tyEnv translatedArgs expectedArgTypes
             argTypes <- mapM (translateType tyEnv) (map fst translatedArgs)
             pure $ TL.ExpApp methodCoercionsApplied (TL.ExpConstr (tupleName $ length translatedArgs) argTypes (map snd translatedArgs))
         Nothing -> pure methodCoercionsApplied
     pure $ argsApplied
 
-methodCallOnType :: TyEnv -> G.MeName -> TL.Exp -> Maybe [(G.Type, TL.Exp)] -> G.Type -> Maybe [G.Type] -> T (G.Type, TL.Exp)
-methodCallOnType tyEnv meName translatedReceiverExpression translatedArgs receiverType methodTypeArgs = withCtx ("methodCallOnType for " ++ (T.unpack $ G.unMeName meName)) $ do
+methodCallOnType :: VarEnv -> TyEnv -> G.MeName -> TL.Exp -> Maybe [G.Exp] -> G.Type -> Maybe [G.Type] -> T (G.Type, TL.Exp)
+methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverType methodTypeArgs = withCtx ("methodCallOnType for " ++ (T.unpack $ G.unMeName meName)) $ do
     classified <- classifyTy receiverType
     case classified of
         TyKindStruct typeName typeArgs -> do
@@ -514,7 +526,7 @@ methodCallOnType tyEnv meName translatedReceiverExpression translatedArgs receiv
                     subst <- inst (G.msig_tyArgs $ G.ms_sig spec) meTyArgs
                     pure $ G.applyTySubst subst constraints
                 Nothing -> pure constraints
-            argsApplied <- methodCall tyEnv methodVar (Just (translatedReceiverExpression, receiverType, typeArgs, expectedReceiverType)) translatedArgs expectedArgTypes methodTypeArgs receiverConstraints constraints
+            argsApplied <- methodCall varEnv tyEnv methodVar (Just (translatedReceiverExpression, receiverType, typeArgs, expectedReceiverType)) args expectedArgTypes methodTypeArgs receiverConstraints constraints
             pure $ (resultType, argsApplied)
         TyKindIface typeName _ -> do
             iface <- lookupIface typeName
@@ -549,23 +561,23 @@ methodCallOnType tyEnv meName translatedReceiverExpression translatedArgs receiv
             --        subst <- inst (G.msig_tyArgs $ G.ms_sig spec) meTyArgs
             --        pure $ G.applyTySubst subst constraints
             --    Nothing -> pure constraints
-            argsApplied <- methodCall tyEnv methodVar Nothing translatedArgs expectedArgTypes methodTypeArgs receiverConstraints constraints
+            argsApplied <- methodCall varEnv tyEnv methodVar Nothing args expectedArgTypes methodTypeArgs receiverConstraints constraints
             outerCase <- pure $ TL.ExpCase translatedReceiverExpression [TL.PatClause (TL.PatConstr (TL.ConstrName $ interfacePrefix <> (G.unTyName typeName)) translatedFormals patterns) argsApplied]
             pure $ (resultType, outerCase)
         TyKindTyVar t -> do
             resolved <- lookupTyVar t tyEnv
-            methodCallOnType tyEnv meName translatedReceiverExpression translatedArgs resolved methodTypeArgs
+            methodCallOnType varEnv tyEnv meName translatedReceiverExpression args resolved methodTypeArgs
         _ -> failT ("Cannot call method on " ++ (prettyS receiverType))
 
-methodCallFun :: TyEnv -> G.MeName -> [(G.Type, TL.Exp)] -> [G.Type] -> T (G.Type, TL.Exp)
-methodCallFun tyEnv meName translatedArgs methodTypeArgs = do
+methodCallFun :: VarEnv -> TyEnv -> G.MeName -> [G.Exp] -> [G.Type] -> T (G.Type, TL.Exp)
+methodCallFun varEnv tyEnv meName args methodTypeArgs = do
     signature <- lookupFun meName
     expectedArgTypes <- pure $ map snd (G.msig_args signature)
     subst <- inst (G.msig_tyArgs signature) methodTypeArgs
     expectedArgTypes <- pure $ G.applyTySubst subst expectedArgTypes
     methodVar <- pure $ TL.ExpVar $ TL.VarName $ G.unMeName meName
     constraints <- pure $ map (\x -> maybeType (snd x)) $ G.unTyFormals $ G.msig_tyArgs signature
-    translatedExp <- methodCall tyEnv methodVar Nothing (Just translatedArgs) expectedArgTypes (Just methodTypeArgs) [] constraints
+    translatedExp <- methodCall varEnv tyEnv methodVar Nothing (Just args) expectedArgTypes (Just methodTypeArgs) [] constraints
     pure (G.msig_res signature, translatedExp)
 
 typeOfField :: Struct -> G.FieldName -> G.Type
@@ -608,11 +620,11 @@ getCoercionAbsName tyVarName namedTargetType = TL.VarName $ (G.unTyVarName tyVar
 getCoercionAbs :: G.TyVarName -> G.TyName -> TL.Exp
 getCoercionAbs tyVarName namedTargetType = TL.ExpVar $ getCoercionAbsName tyVarName namedTargetType
 
-translateExpression :: VarEnv -> TyEnv -> G.Exp -> T (G.Type, TL.Exp)
-translateExpression varEnv tyEnv exp = do
-    (resultType, translatedExpression) <- translateExpression' varEnv tyEnv exp
+translateExpressionAndSub :: VarEnv -> TyEnv -> G.Exp -> T (G.Type, TL.Exp) -- todo remove this and move logic to correct place
+translateExpressionAndSub varEnv tyEnv exp = do
+    (resultType, translatedExpression) <- translateExpression varEnv tyEnv exp
     case resultType of
-        G.TyVar name -> withCtx ("inserting coercion application for " ++ prettyS exp) $ do
+        G.TyVar name -> withCtx ("insertion of coercion application for " ++ prettyS exp) $ do
             resolved <- lookupTyVar name tyEnv
             tyName <- case resolved of
                 G.TyNamed name _ -> pure name
@@ -621,14 +633,14 @@ translateExpression varEnv tyEnv exp = do
             pure $ (resolved, (TL.ExpApp coercionAbs translatedExpression))
         _ -> pure (resultType, translatedExpression)
 
-translateExpression' :: VarEnv -> TyEnv -> G.Exp -> T (G.Type, TL.Exp)
-translateExpression' _ _ (G.BoolLit value) = pure $ (tyBuiltinToType TyBool, TL.ExpBool value)
-translateExpression' _ _ (G.IntLit value) = pure $ (tyBuiltinToType TyInt, TL.ExpInt value)
-translateExpression' _ _ (G.StrLit value) = pure $ (tyBuiltinToType TyString, TL.ExpStr value)
-translateExpression' varEnv _ (G.Var varName) = do
+translateExpression :: VarEnv -> TyEnv -> G.Exp -> T (G.Type, TL.Exp)
+translateExpression _ _ (G.BoolLit value) = pure $ (tyBuiltinToType TyBool, TL.ExpBool value)
+translateExpression _ _ (G.IntLit value) = pure $ (tyBuiltinToType TyInt, TL.ExpInt value)
+translateExpression _ _ (G.StrLit value) = pure $ (tyBuiltinToType TyString, TL.ExpStr value)
+translateExpression varEnv _ (G.Var varName) = do
     goType <- lookupVar varName varEnv
     pure $ (goType, TL.ExpVar (translateVarName varName))
-translateExpression' varEnv tyEnv (G.StructLit structType fieldValues) = do
+translateExpression varEnv tyEnv (G.StructLit structType fieldValues) = do
     assertTypeOk tyEnv structType
     actualType <- classifyTy structType
     case actualType of
@@ -641,10 +653,10 @@ translateExpression' varEnv tyEnv (G.StructLit structType fieldValues) = do
             substitutedStructType <- substituteTypeArgs structType typeArgs
             fields <- pure $ st_fields goStruct
             when (length fieldValues /= length fields) $ failT ("Invalid number of arguments for construction of struct " ++ (prettyS substitutedStructType))
-            translatedFieldValues <- mapM (translateExpression varEnv tyEnv) fieldValues
+            translatedFieldValues <- mapM (translateExpressionAndSub varEnv tyEnv) fieldValues
             pure $ (substitutedStructType, TL.ExpConstr (TL.ConstrName $ structPrefix <> (G.unTyName typeName)) translatedTypeArgs (map snd translatedFieldValues))
         _ -> failT ("Invalid type for constructing a struct: " ++ (prettyS structType))
-translateExpression' varEnv tyEnv (G.Select exp fieldName) = do
+translateExpression varEnv tyEnv (G.Select exp fieldName) = do
     (expType, translatedExpression) <- withCtx "translation of expression to select on" $ translateExpression varEnv tyEnv exp
     classified <- classifyTy expType
     case classified of
@@ -657,21 +669,8 @@ translateExpression' varEnv tyEnv (G.Select exp fieldName) = do
             patterns <- pure $ map (generateSelectPattern fieldName) (zip translatedFieldTypes (st_fields goStruct))
             translatedTyArgs <- mapM (translateType tyEnv) tyArgs
             pure $ (typeOfField goStruct fieldName, TL.ExpCase translatedExpression [TL.PatClause (TL.PatConstr (TL.ConstrName $ structPrefix <> (G.unTyName name)) translatedTyArgs patterns) (TL.ExpVar selectVarName)])
-        --G.Var varName -> do
-        --    varType <- lookupVar varName varEnv
-        --    classified <- classifyTy varType
-        --    case classified of
-        --        TyKindStruct tyName _ -> do
-        --            goStruct <- lookupStruct tyName
-        --            translatedFieldTypes <- mapM (translateType tyEnv) (map snd (st_fields goStruct))
-        --            formals <- pure $ st_formals goStruct
-        --            translatedFormals <- pure $ translateFormals formals
-        --            patterns <- pure $ map (generateSelectPattern fieldName) (zip translatedFieldTypes (st_fields goStruct))
-        --            constrName <- pure $ TL.ConstrName $ structPrefix <> (G.unTyName tyName)
-        --            pure $ (typeOfField goStruct fieldName, TL.ExpCase translatedExpression [TL.PatClause (TL.PatConstr constrName translatedFormals patterns) (TL.ExpVar selectVarName)])
-        --        _ -> failT ("Field selection requires a struct, but variable with type " ++ (show classified) ++ " is not a struct")
         _ -> failT ("Field selection requires a struct, but " ++ (show exp) ++ " is not a struct")
-translateExpression' varEnv tyEnv (G.BinOp binOp left right) = do
+translateExpression varEnv tyEnv (G.BinOp binOp left right) = do
     (tl, translatedLeft) <- translateExpression varEnv tyEnv left
     (tr, translatedRight) <- translateExpression varEnv tyEnv right
     ty <- case Map.lookup binOp binOpTypes of
@@ -680,14 +679,14 @@ translateExpression' varEnv tyEnv (G.BinOp binOp left right) = do
                 Nothing -> failT ("Binary operator " ++ (show binOp) ++ " does not support the types " ++ (show tl) ++ " and " ++ (show tr))
             Nothing -> failT ("Unknown binary operator: " ++ show binOp)
     pure $ (ty, TL.ExpBinOp translatedLeft binOp translatedRight)
-translateExpression' varEnv tyEnv (G.UnOp op expression) = do
+translateExpression varEnv tyEnv (G.UnOp op expression) = do
     (resultType, translatedExpression) <- translateExpression varEnv tyEnv expression
     case op of
         Not -> when (resultType /= tyBuiltinToType TyBool) $ failT ("Invalid type for not: " ++ (prettyS resultType))
         Inv -> when (resultType /= tyBuiltinToType TyInt) $ failT ("Invalid type for -: " ++ (prettyS resultType))
     pure $ (resultType, TL.ExpUnOp op translatedExpression)
-translateExpression' varEnv tyEnv (G.MeCall (G.Var (G.VarName "fmt")) meName _ args) = do
-    translatedArgsWithTypes <- mapM (translateExpression varEnv tyEnv) args
+translateExpression varEnv tyEnv (G.MeCall (G.Var (G.VarName "fmt")) meName _ args) = do
+    translatedArgsWithTypes <- mapM (translateExpressionAndSub varEnv tyEnv) args
     translatedArgs <- pure $ map snd translatedArgsWithTypes
     rawMeName <- pure $ (T.unpack $ G.unMeName meName)
     _ <- pure $ when (not $ elem rawMeName ["Printf", "Sprintf"]) (failT $ "Method is not part of fmt: " ++ (show meName))
@@ -700,14 +699,12 @@ translateExpression' varEnv tyEnv (G.MeCall (G.Var (G.VarName "fmt")) meName _ a
     if rawMeName == "Printf"
         then pure $ (G.tyVoid, TL.ExpPrintf formatStringLit valueArgs)
         else pure $ (tyBuiltinToType TyString, TL.ExpSprintf formatStringLit valueArgs)
-translateExpression' varEnv tyEnv (G.MeCall exp meName typeArgs args) = do
-    (receiverType, translatedReceiverExpression) <- translateExpression varEnv tyEnv exp
-    translatedArgsWithTypes <- mapM (translateExpression varEnv tyEnv) args
-    methodCallOnType tyEnv meName translatedReceiverExpression (Just translatedArgsWithTypes) receiverType (Just typeArgs)
-translateExpression' varEnv tyEnv (G.FunCall meName typeArgs args) = do
-    translatedArgsWithTypes <- mapM (translateExpression varEnv tyEnv) args
-    methodCallFun tyEnv meName translatedArgsWithTypes typeArgs
-translateExpression' varEnv tyEnv (G.Cond a b c) = do
+translateExpression varEnv tyEnv (G.MeCall exp meName typeArgs args) = do
+    (receiverType, translatedReceiverExpression) <- translateExpressionAndSub varEnv tyEnv exp
+    methodCallOnType varEnv tyEnv meName translatedReceiverExpression (Just args) receiverType (Just typeArgs)
+translateExpression varEnv tyEnv (G.FunCall meName typeArgs args) = do
+    methodCallFun varEnv tyEnv meName args typeArgs
+translateExpression varEnv tyEnv (G.Cond a b c) = do
     (typeA, translatedA) <- translateExpression varEnv tyEnv a
     (typeB, translatedB) <- translateExpression varEnv tyEnv b
     (typeC, translatedC) <- translateExpression varEnv tyEnv c
@@ -725,7 +722,7 @@ translateExpression' varEnv tyEnv (G.Cond a b c) = do
                     coercedB <- generateCoercion tyEnv (typeB, translatedB) typeC
                     pure $ (typeC, TL.ExpCond translatedA coercedB translatedC)
                 else failT ("Incompatible types in branches: " ++ (show b) ++ " and " ++ (show c))
-translateExpression' _ _ e = failT ("I don't know how to translate this expression yet: " ++ (show e))
+translateExpression _ _ e = failT ("I don't know how to translate this expression yet: " ++ (show e))
 
 generateMainDecls :: [G.MeBody] -> Int -> [G.Decl]
 generateMainDecls [] _ = []
