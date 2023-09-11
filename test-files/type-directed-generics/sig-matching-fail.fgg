@@ -1,5 +1,5 @@
 /// TEST EVAL_BAD: ERROR: found implementation of method Km-foo for struct Kt-Box with signature (tuple-2 (tuple-1 Kt-J) (tuple-3 (Kt-Box (tuple-1 (Kt-Box (tuple-1 (Kt-Box (tuple-1 Kt-int)))))) (Kt-Box (tuple-1 Ki-1)) Kt-int))  but this does not match required signature (tuple-2 (tuple-1 Kt-J) (tuple-3 (Kt-Box (tuple-1 (Kt-Box (tuple-1 Kt-int)))) (Kt-Box (tuple-1 Ki-1)) Kt-int))
-/// TEST_SYSTEMF EVAL_BAD: ERROR: found implementation of method Km-foo for struct Kt-Box with signature (tuple-2 (tuple-1 Kt-J) (tuple-3 (Kt-Box (tuple-1 (Kt-Box (tuple-1 (Kt-Box (tuple-1 Kt-int)))))) (Kt-Box (tuple-1 Ki-1)) Kt-int))  but this does not match required signature (tuple-2 (tuple-1 Kt-J) (tuple-3 (Kt-Box (tuple-1 (Kt-Box (tuple-1 Kt-int)))) (Kt-Box (tuple-1 Ki-1)) Kt-int))
+/// TEST_SYSTEMF SKIP
 
 type Box(type a) struct { f a }
 

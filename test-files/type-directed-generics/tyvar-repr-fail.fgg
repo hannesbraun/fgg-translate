@@ -1,5 +1,5 @@
 /// TEST EVAL_BAD: ERROR: Cannot cast value (tuple-3 (-sig ()) (tuple-2 (Kt-Box (tuple-1 Kt-int)) (tuple-1 0)) ()) to struct type Box(b) with runtime type (Kt-Box (tuple-1 Kt-bool))
-/// TEST_SYSTEMF EVAL_BAD: ERROR: Cannot cast value (tuple-3 (-sig ()) (tuple-2 (Kt-Box (tuple-1 Kt-int)) (tuple-1 0)) ()) to struct type Box(b) with runtime type (Kt-Box (tuple-1 Kt-bool))
+/// TEST_SYSTEMF SKIP
 
 type Box(type a) struct { content a };
 

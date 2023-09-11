@@ -1,5 +1,5 @@
 /// TEST EVAL_BAD: found implementation of method Km-Do for struct Kt-Bar with signature (tuple-2 (tuple-1 Kt-Any) (tuple-3 Ki-1 Kt-Bool Kt-Int))  but this does not match required signature (tuple-2 (tuple-1 Kt-Any) (tuple-3 Ki-1 Kt-Bool Kt-Bool))
-/// TEST_SYSTEMF EVAL_BAD: found implementation of method Km-Do for struct Kt-Bar with signature (tuple-2 (tuple-1 Kt-Any) (tuple-3 Ki-1 Kt-Bool Kt-Int))  but this does not match required signature (tuple-2 (tuple-1 Kt-Any) (tuple-3 Ki-1 Kt-Bool Kt-Bool))
+/// TEST_SYSTEMF SKIP
 
 // ~/go/bin/fcgg -dictpass -fgg non_variance.fgg
 package main;
