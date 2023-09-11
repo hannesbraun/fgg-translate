@@ -567,7 +567,31 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
         TyKindTyVar t -> do
             resolved <- lookupTyVar t tyEnv
             methodCallOnType varEnv tyEnv meName translatedReceiverExpression args resolved methodTypeArgs
-        _ -> failT ("Cannot call method on " ++ (prettyS receiverType))
+        TyKindBuiltin builtinType -> do -- TODO this branch is almost a duplicate of TyKindStruct
+            methodDecls <- allMethodsForStructOrBuiltin (tyBuiltinToTyName builtinType)
+            maybeDecl <- pure $ List.find (\x -> (G.ms_name $ me_spec x) == meName) methodDecls
+            decl <- case maybeDecl of
+                Just x -> pure x
+                Nothing -> failT ("Method declaration for builtin" ++ (prettyS (tyBuiltinToTyName builtinType)) ++ " not found: " ++ (prettyS meName))
+            spec <- pure $ me_spec decl
+            resultType <- pure $ G.msig_res $ G.ms_sig spec
+            expectedArgTypes <- pure $ map snd $ G.msig_args $ G.ms_sig spec
+            expectedArgTypes <- case methodTypeArgs of
+                Just meTyArgs -> do
+                    subst <- inst (G.msig_tyArgs $ G.ms_sig spec) meTyArgs
+                    pure $ G.applyTySubst subst expectedArgTypes
+                Nothing -> pure expectedArgTypes
+            methodVar <- pure $ TL.ExpVar $ TL.VarName $ (G.unMeName meName) <> "_" <> (G.unTyName (tyBuiltinToTyName builtinType))
+            receiverConstraints <- pure $ []
+            expectedReceiverType <- pure $ extractExpectedReceiverType decl
+            constraints <- pure $ map (\x -> maybeType (snd x)) (G.unTyFormals $ G.msig_tyArgs $ G.ms_sig spec)
+            constraints <- case methodTypeArgs of
+                Just meTyArgs -> do
+                    subst <- inst (G.msig_tyArgs $ G.ms_sig spec) meTyArgs
+                    pure $ G.applyTySubst subst constraints
+                Nothing -> pure constraints
+            argsApplied <- methodCall varEnv tyEnv methodVar (Just (translatedReceiverExpression, receiverType, [], expectedReceiverType)) args expectedArgTypes methodTypeArgs receiverConstraints constraints
+            pure $ (resultType, argsApplied)
 
 methodCallFun :: VarEnv -> TyEnv -> G.MeName -> [G.Exp] -> [G.Type] -> T (G.Type, TL.Exp)
 methodCallFun varEnv tyEnv meName args methodTypeArgs = do
