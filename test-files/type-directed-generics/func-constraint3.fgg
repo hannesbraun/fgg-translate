@@ -1,4 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-Pair (tuple-2 (tuple-2 Kt-IntBox (tuple-1 3)) 42))
+/// TEST_SYSTEMF SKIP
 
 type Box(type a) struct { content a }
 type Empty struct {}

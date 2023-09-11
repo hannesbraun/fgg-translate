@@ -1,4 +1,5 @@
 /// TEST EVAL_BAD: ERROR: cannot cast value (tuple-2 Kt-A tuple-0) to runtime type Kt-B
+/// TEST_SYSTEMF EVAL_BAD: ERROR: cannot cast value (tuple-2 Kt-A tuple-0) to runtime type Kt-B
 
 package main;
 type ToAny struct { any Any };

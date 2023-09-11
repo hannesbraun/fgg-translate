@@ -1,4 +1,5 @@
 /// TEST TYPECHECK_BAD: Unknown field fA for struct A1
+/// TEST_SYSTEMF TYPECHECK_BAD: Unknown field fA for struct A1
 
 package main;
 type Any(type ) interface {};

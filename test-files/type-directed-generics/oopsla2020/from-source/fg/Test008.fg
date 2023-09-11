@@ -1,4 +1,5 @@
 /// TEST TYPECHECK_BAD: Unbound variable foo
+/// TEST_SYSTEMF TYPECHECK_BAD: Unbound variable foo
 
 package main;
 type A struct {};

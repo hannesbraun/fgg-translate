@@ -1,4 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 (Kt-Pair (tuple-2 Kt-Bool Kt-Bool)) (tuple-2 (tuple-2 Kt-Bool tuple-0) (tuple-2 Kt-Bool tuple-0)))
+/// TEST_SYSTEMF EVAL_GOOD: (tuple-2 (Kt-Pair (tuple-2 Kt-Bool Kt-Bool)) (tuple-2 (tuple-2 Kt-Bool tuple-0) (tuple-2 Kt-Bool tuple-0)))
 package main;
 
 import "fmt";

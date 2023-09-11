@@ -1,4 +1,5 @@
 /// TEST TYPECHECK_BAD: Cannot instantiate method m1 for struct A with type arguments (): arity mismatch
+/// TEST_SYSTEMF TYPECHECK_BAD: Cannot instantiate method m1 for struct A with type arguments (): arity mismatch
 
 package main;
 type Any(type ) interface {};

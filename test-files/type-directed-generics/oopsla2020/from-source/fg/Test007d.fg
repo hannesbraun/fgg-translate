@@ -1,4 +1,5 @@
 /// TEST TYPECHECK_BAD: A is not a subtype of IA
+/// TEST_SYSTEMF TYPECHECK_BAD: A is not a subtype of IA
 
 package main;
 type Any interface {};

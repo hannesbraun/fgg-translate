@@ -1,4 +1,5 @@
 /// TEST TYPECHECK_BAD: Invalid number of arguments for construction of struct B
+/// TEST_SYSTEMF TYPECHECK_BAD: Invalid number of arguments for construction of struct B
 
 package main;
 type A struct {};

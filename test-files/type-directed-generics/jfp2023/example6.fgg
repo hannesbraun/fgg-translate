@@ -1,4 +1,5 @@
 /// TEST EVAL_GOOD:
+/// TEST_SYSTEMF EVAL_GOOD:
 // Figure 2
 package main
 

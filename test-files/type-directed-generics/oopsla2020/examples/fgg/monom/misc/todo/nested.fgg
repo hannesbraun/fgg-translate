@@ -1,4 +1,5 @@
 /// TEST TYPECHECK_BAD: Box(Box(a)) is not a subtype of Box(a)
+/// TEST_SYSTEMF TYPECHECK_BAD: Box(Box(a)) is not a subtype of Box(a)
 
 //$ go run github.com/rhu1/fgg -fgg -monomc=-- -v fgg/examples/monom/misc/nested.go
 

@@ -1,4 +1,5 @@
 /// TEST TYPECHECK_BAD:  No implementation of method foo for struct A(D)
+/// TEST_SYSTEMF TYPECHECK_BAD:  No implementation of method foo for struct A(D)
 
 package main;
 type Any interface{};

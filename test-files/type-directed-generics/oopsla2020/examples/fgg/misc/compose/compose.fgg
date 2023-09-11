@@ -1,4 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Zero tuple-0)))))))))))))
+/// TEST_SYSTEMF EVAL_GOOD: (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Zero tuple-0)))))))))))))
 
 //$ go run github.com/rhu1/fgg -fgg -eval=-1 -v fgg/examples/misc/compose/compose.fgg
 

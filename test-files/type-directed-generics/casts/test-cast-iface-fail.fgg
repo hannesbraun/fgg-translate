@@ -1,4 +1,5 @@
 /// TEST EVAL_BAD: ERROR: no method implementation for (tuple-2 Kt-A (Km-foo (tuple-2 tuple-0 (tuple-1 Kt-A))))
+/// TEST_SYSTEMF EVAL_BAD: ERROR: no method implementation for (tuple-2 Kt-A (Km-foo (tuple-2 tuple-0 (tuple-1 Kt-A))))
 
 package main;
 type I interface { foo() A };

@@ -1,4 +1,5 @@
 /// TEST TYPECHECK_GOOD
+/// TEST_SYSTEMF TYPECHECK_GOOD
 // loops
 
 //$ go run github.com/rhu1/fgg -fgg -monomc=tmp/test/fg/monom/misc/mono-ok/alternate.go fgg/examples/monom/misc/mono-ok/alternate.go

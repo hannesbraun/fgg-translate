@@ -1,4 +1,5 @@
 /// TEST EVAL_BAD: found implementation of method Km-m for struct Kt-S with signature (tuple-2 (tuple-1 Kt-Any) (tuple-1 Kt-Dummy))  but this does not match required signature (tuple-2 (tuple-1 Kt-Top) (tuple-1 Kt-Dummy))
+/// TEST_SYSTEMF EVAL_BAD: found implementation of method Km-m for struct Kt-S with signature (tuple-2 (tuple-1 Kt-Any) (tuple-1 Kt-Dummy))  but this does not match required signature (tuple-2 (tuple-1 Kt-Top) (tuple-1 Kt-Dummy))
 //$ go run github.com/rhu1/fgg -fgg -monomc=tmp/test/fg/monom/misc/mono-ok/meth-clash.go fgg/examples/monom/misc/mono-ok/meth-clash.go
 //$ go run github.com/rhu1/fgg -eval=7 -v tmp/test/fg/monom/misc/mono-ok/meth-clash.go
 

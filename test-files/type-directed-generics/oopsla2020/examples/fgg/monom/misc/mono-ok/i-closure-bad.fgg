@@ -1,4 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-Pair (tuple-2 (tuple-2 Kt-S tuple-0) (tuple-2 Kt-S tuple-0)))
+/// TEST_SYSTEMF EVAL_GOOD: (tuple-2 Kt-Pair (tuple-2 (tuple-2 Kt-S tuple-0) (tuple-2 Kt-S tuple-0)))
 
 //$ go run github.com/rhu1/fgg -fgg -monomc=tmp/test/fg/monom/misc/mono-ok/i-closure-bad.go fgg/examples/monom/misc/mono-ok/i-closure-bad.go
 //$ go run github.com/rhu1/fgg -eval=-1 -v tmp/test/fg/monom/misc/mono-ok/i-closure-bad.go

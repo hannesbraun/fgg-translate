@@ -1,4 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-Result (tuple-2 1 2))
+/// TEST_SYSTEMF SKIP
 type Box(type a) struct { content a }
 
 type I interface {

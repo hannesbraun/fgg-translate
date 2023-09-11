@@ -1,4 +1,5 @@
 /// TEST TYPECHECK_GOOD
+/// TEST_SYSTEMF TYPECHECK_GOOD
 
 package main;
 type A struct {};
