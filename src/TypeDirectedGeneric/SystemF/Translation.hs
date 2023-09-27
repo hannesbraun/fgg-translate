@@ -76,7 +76,9 @@ translateMethodDeclaration receiver methodSpec methodBody = do
             receiverTypeArgs <- pure $ map (\(tyVar, _) -> G.TyVar tyVar) (G.unTyFormals receiverFormals)
             extendVarEnv varEnv [(receiverName, G.TyNamed receiverTypeName receiverTypeArgs)]
         Nothing -> pure varEnv
-    translatedBody <- translateMethodBody varEnv tyEnv methodBody
+    (bodyType, translatedBody) <- translateMethodBody varEnv tyEnv methodBody
+    -- coerce return type to required type
+    translatedBody <- generateCoercion tyEnv (bodyType, translatedBody) (G.msig_res $ G.ms_sig methodSpec)
     translatedAbstractionExpression <- buildAbstractionExpression tyEnv translatedBody receiver methodSpec
     translatedTypeInfo <- translateMethodSpec tyEnv receiver methodSpec
     name <- pure $ G.unMeName $ G.ms_name methodSpec
@@ -395,7 +397,7 @@ generateCoercionAbs' tyEnv originalType targetType = do
             pure $ (coercionType, TL.ExpAbs originalVarName translatedOrigType constr)
         _ -> failT ("Can only coerce to an interface, not to " ++ (prettyS targetType))
 
-translateMethodBody :: VarEnv -> TyEnv -> G.MeBody -> T TL.Exp
+translateMethodBody :: VarEnv -> TyEnv -> G.MeBody -> T (G.Type, TL.Exp)
 translateMethodBody varEnv tyEnv methodBody =
     translateBindings varEnv tyEnv (G.mb_bindings methodBody) (G.mb_return methodBody)
 
@@ -403,7 +405,7 @@ translateVarName :: G.VarName -> TL.VarName
 translateVarName (G.VarName name) = TL.VarName name
 
 -- Maybe I'll find a better function name in the future
-translateBindings :: VarEnv -> TyEnv -> [(G.VarName, Maybe G.Type, G.Exp)] -> Maybe G.Exp -> T TL.Exp
+translateBindings :: VarEnv -> TyEnv -> [(G.VarName, Maybe G.Type, G.Exp)] -> Maybe G.Exp -> T (G.Type, TL.Exp)
 translateBindings varEnv tyEnv [] mainExp = translateMethodBodyReturn varEnv tyEnv mainExp
 translateBindings varEnv tyEnv ((name, ty, exp):otherBindings) mainExp = withCtx ("translation of binding " ++ (prettyS name)) $ do
     translatedName <- pure $ translateVarName name
@@ -419,14 +421,12 @@ translateBindings varEnv tyEnv ((name, ty, exp):otherBindings) mainExp = withCtx
         else pure translatedExpression
     translatedType <- translateType tyEnv bindingType
     updatedVarEnv <- extendVarEnv varEnv [(name, bindingType)]
-    innerExpression <- translateBindings updatedVarEnv tyEnv otherBindings mainExp
-    pure $ TL.ExpApp (TL.ExpAbs translatedName translatedType innerExpression) coercedExpression
+    (innerExpressionType, innerExpression) <- translateBindings updatedVarEnv tyEnv otherBindings mainExp
+    pure $ (innerExpressionType, TL.ExpApp (TL.ExpAbs translatedName translatedType innerExpression) coercedExpression)
 
-translateMethodBodyReturn :: VarEnv -> TyEnv -> Maybe G.Exp -> T TL.Exp
-translateMethodBodyReturn _ _ (Nothing) = pure $ TL.ExpVoid
-translateMethodBodyReturn varEnv tyEnv (Just mainExp) = do
-    res <- translateExpression varEnv tyEnv mainExp
-    pure $ snd res
+translateMethodBodyReturn :: VarEnv -> TyEnv -> Maybe G.Exp -> T (G.Type, TL.Exp)
+translateMethodBodyReturn _ _ (Nothing) = pure $ (G.tyVoid, TL.ExpVoid)
+translateMethodBodyReturn varEnv tyEnv (Just mainExp) = translateExpression varEnv tyEnv mainExp
 
 extractExpectedReceiverType :: MeDecl -> G.Type
 extractExpectedReceiverType (MeDecl _ tyName formals _ _) = G.TyNamed tyName (map (\x -> maybeType (snd x)) $ G.unTyFormals formals)
