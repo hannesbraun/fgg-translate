@@ -460,8 +460,8 @@ coerceArgument tyEnv source targetType = do
             coercedExp <- generateCoercion tyEnv source targetType
             pure (targetType, coercedExp)
 
-methodCall :: VarEnv -> TyEnv -> TL.Exp -> Maybe (TL.Exp, G.Type, [G.Type], G.Type) -> Maybe [G.Exp] -> [G.Type] -> Maybe [G.Type] -> [G.Type] -> [G.Type] -> T TL.Exp
-methodCall varEnv tyEnv methodVar receiver args expectedArgTypes methodTypeArgs receiverConstraints methodConstraints = withCtx "methodCall" $ do
+methodCall :: VarEnv -> TyEnv -> TL.Exp -> Maybe (TL.Exp, G.Type, [G.Type], G.Type) -> Maybe [G.Exp] -> [G.Type] -> Maybe [G.Type] -> [G.Type] -> [G.Type] -> G.TyFormals -> T TL.Exp
+methodCall varEnv tyEnv methodVar receiver args expectedArgTypes methodTypeArgs receiverConstraints methodConstraints methodFormals = withCtx "methodCall" $ do
     receiverApplied <- case receiver of
                         Just (translatedReceiverExpression, receiverType, receiverTypeArgs, expectedReceiverType) -> withCtx "receiverArgs" $ do
                             -- apply type arguments from receiver
@@ -480,7 +480,9 @@ methodCall varEnv tyEnv methodVar receiver args expectedArgTypes methodTypeArgs 
         Just methodTypeArgs -> withCtx "methodCoercionArgs" $ do
             translatedMethodTypeArgs <- mapM (translateType tyEnv) methodTypeArgs
             methodTypesApplied <- pure $ generateTypeApplication receiverApplied translatedMethodTypeArgs
-            generatedCoercions <- mapM (\(originalType, targetType) -> generateCoercionAbs tyEnv originalType targetType) (zip methodTypeArgs methodConstraints)
+            substitutions <- pure $ zip (map fst (G.unTyFormals methodFormals)) methodTypeArgs
+            substitutedMethodConstraints <- pure $ map (substituteTypeVariables substitutions) methodConstraints
+            generatedCoercions <- mapM (\(originalType, targetType) -> generateCoercionAbs tyEnv originalType targetType) (zip methodTypeArgs substitutedMethodConstraints)
             (coercionTypes, generatedCoercions) <- pure $ unzip generatedCoercions
             methodCoercions <- pure $ TL.ExpConstr (tupleName $ length generatedCoercions) coercionTypes generatedCoercions
             pure $ TL.ExpApp methodTypesApplied methodCoercions
@@ -524,7 +526,7 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
                     subst <- inst (G.msig_tyArgs $ G.ms_sig spec) meTyArgs
                     pure $ G.applyTySubst subst constraints
                 Nothing -> pure constraints
-            argsApplied <- methodCall varEnv tyEnv methodVar (Just (translatedReceiverExpression, receiverType, typeArgs, expectedReceiverType)) args expectedArgTypes methodTypeArgs receiverConstraints constraints
+            argsApplied <- methodCall varEnv tyEnv methodVar (Just (translatedReceiverExpression, receiverType, typeArgs, expectedReceiverType)) args expectedArgTypes methodTypeArgs receiverConstraints constraints (G.msig_tyArgs $ G.ms_sig spec)
             pure $ (resultType, argsApplied)
         TyKindIface typeName _ -> do
             iface <- lookupIface typeName
@@ -559,7 +561,7 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
             --        subst <- inst (G.msig_tyArgs $ G.ms_sig spec) meTyArgs
             --        pure $ G.applyTySubst subst constraints
             --    Nothing -> pure constraints
-            argsApplied <- methodCall varEnv tyEnv methodVar Nothing args expectedArgTypes methodTypeArgs receiverConstraints constraints
+            argsApplied <- methodCall varEnv tyEnv methodVar Nothing args expectedArgTypes methodTypeArgs receiverConstraints constraints (G.msig_tyArgs $ G.ms_sig spec)
             outerCase <- pure $ TL.ExpCase translatedReceiverExpression [TL.PatClause (TL.PatConstr (TL.ConstrName $ interfacePrefix <> (G.unTyName typeName)) translatedFormals patterns) argsApplied]
             pure $ (resultType, outerCase)
         TyKindTyVar t -> do
@@ -588,7 +590,7 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
                     subst <- inst (G.msig_tyArgs $ G.ms_sig spec) meTyArgs
                     pure $ G.applyTySubst subst constraints
                 Nothing -> pure constraints
-            argsApplied <- methodCall varEnv tyEnv methodVar (Just (translatedReceiverExpression, receiverType, [], expectedReceiverType)) args expectedArgTypes methodTypeArgs receiverConstraints constraints
+            argsApplied <- methodCall varEnv tyEnv methodVar (Just (translatedReceiverExpression, receiverType, [], expectedReceiverType)) args expectedArgTypes methodTypeArgs receiverConstraints constraints (G.msig_tyArgs $ G.ms_sig spec)
             pure $ (resultType, argsApplied)
 
 methodCallFun :: VarEnv -> TyEnv -> G.MeName -> [G.Exp] -> [G.Type] -> T (G.Type, TL.Exp)
@@ -599,7 +601,7 @@ methodCallFun varEnv tyEnv meName args methodTypeArgs = do
     expectedArgTypes <- pure $ G.applyTySubst subst expectedArgTypes
     methodVar <- pure $ TL.ExpVar $ TL.VarName $ G.unMeName meName
     constraints <- pure $ map (\x -> maybeType (snd x)) $ G.unTyFormals $ G.msig_tyArgs signature
-    translatedExp <- methodCall varEnv tyEnv methodVar Nothing (Just args) expectedArgTypes (Just methodTypeArgs) [] constraints
+    translatedExp <- methodCall varEnv tyEnv methodVar Nothing (Just args) expectedArgTypes (Just methodTypeArgs) [] constraints (G.msig_tyArgs signature)
     pure (G.msig_res signature, translatedExp)
 
 typeOfField :: Struct -> [G.Type] -> G.FieldName -> T G.Type
