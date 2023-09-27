@@ -508,6 +508,11 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
                 Nothing -> failT ("Method declaration for struct not found: " ++ (prettyS meName))
             spec <- pure $ me_spec decl
             resultType <- pure $ G.msig_res $ G.ms_sig spec
+            methodTypeArgsUnpacked <- pure $ case methodTypeArgs of
+                                                Just x -> x
+                                                Nothing -> []
+            substitutions <- pure $ zip (map fst (G.unTyFormals $ G.msig_tyArgs $ G.ms_sig spec)) methodTypeArgsUnpacked
+            substitutedResultType <- pure $ substituteTypeVariables substitutions resultType
             expectedArgTypes <- pure $ map snd $ G.msig_args $ G.ms_sig spec
             expectedArgTypes <- case methodTypeArgs of
                 Just meTyArgs -> do
@@ -527,7 +532,7 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
                     pure $ G.applyTySubst subst constraints
                 Nothing -> pure constraints
             argsApplied <- methodCall varEnv tyEnv methodVar (Just (translatedReceiverExpression, receiverType, typeArgs, expectedReceiverType)) args expectedArgTypes methodTypeArgs receiverConstraints constraints (G.msig_tyArgs $ G.ms_sig spec)
-            pure $ (resultType, argsApplied)
+            pure $ (substitutedResultType, argsApplied)
         TyKindIface typeName _ -> do
             iface <- lookupIface typeName
             formals <- pure $ if_formals iface
@@ -543,6 +548,11 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
                 Just x -> pure x
                 Nothing -> failT ("Method for interface not found: " ++ (show meName))
             resultType <- pure $ G.msig_res $ G.ms_sig spec
+            methodTypeArgsUnpacked <- pure $ case methodTypeArgs of
+                                                Just x -> x
+                                                Nothing -> []
+            substitutions <- pure $ zip (map fst (G.unTyFormals $ G.msig_tyArgs $ G.ms_sig spec)) methodTypeArgsUnpacked
+            substitutedResultType <- pure $ substituteTypeVariables substitutions resultType
             expectedArgTypes <- pure $ map snd $ G.msig_args $ G.ms_sig spec
             --expectedArgTypes <- case methodTypeArgs of
             --    Just meTyArgs -> do
@@ -563,7 +573,7 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
             --    Nothing -> pure constraints
             argsApplied <- methodCall varEnv tyEnv methodVar Nothing args expectedArgTypes methodTypeArgs receiverConstraints constraints (G.msig_tyArgs $ G.ms_sig spec)
             outerCase <- pure $ TL.ExpCase translatedReceiverExpression [TL.PatClause (TL.PatConstr (TL.ConstrName $ interfacePrefix <> (G.unTyName typeName)) translatedFormals patterns) argsApplied]
-            pure $ (resultType, outerCase)
+            pure $ (substitutedResultType, outerCase)
         TyKindTyVar t -> do
             resolved <- lookupTyVar t tyEnv
             methodCallOnType varEnv tyEnv meName translatedReceiverExpression args resolved methodTypeArgs
@@ -575,6 +585,11 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
                 Nothing -> failT ("Method declaration for builtin" ++ (prettyS (tyBuiltinToTyName builtinType)) ++ " not found: " ++ (prettyS meName))
             spec <- pure $ me_spec decl
             resultType <- pure $ G.msig_res $ G.ms_sig spec
+            methodTypeArgsUnpacked <- pure $ case methodTypeArgs of
+                                                Just x -> x
+                                                Nothing -> []
+            substitutions <- pure $ zip (map fst (G.unTyFormals $ G.msig_tyArgs $ G.ms_sig spec)) methodTypeArgsUnpacked
+            substitutedResultType <- pure $ substituteTypeVariables substitutions resultType
             expectedArgTypes <- pure $ map snd $ G.msig_args $ G.ms_sig spec
             expectedArgTypes <- case methodTypeArgs of
                 Just meTyArgs -> do
@@ -591,7 +606,7 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
                     pure $ G.applyTySubst subst constraints
                 Nothing -> pure constraints
             argsApplied <- methodCall varEnv tyEnv methodVar (Just (translatedReceiverExpression, receiverType, [], expectedReceiverType)) args expectedArgTypes methodTypeArgs receiverConstraints constraints (G.msig_tyArgs $ G.ms_sig spec)
-            pure $ (resultType, argsApplied)
+            pure $ (substitutedResultType, argsApplied)
 
 methodCallFun :: VarEnv -> TyEnv -> G.MeName -> [G.Exp] -> [G.Type] -> T (G.Type, TL.Exp)
 methodCallFun varEnv tyEnv meName args methodTypeArgs = do
