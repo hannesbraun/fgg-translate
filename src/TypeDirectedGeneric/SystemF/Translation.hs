@@ -602,10 +602,12 @@ methodCallFun varEnv tyEnv meName args methodTypeArgs = do
     translatedExp <- methodCall varEnv tyEnv methodVar Nothing (Just args) expectedArgTypes (Just methodTypeArgs) [] constraints
     pure (G.msig_res signature, translatedExp)
 
-typeOfField :: Struct -> G.FieldName -> G.Type
-typeOfField struct fieldName = case List.find (\x -> fieldName == (fst x)) (st_fields struct) of
-    Just (_, t) -> t
-    Nothing -> G.tyVoid -- Should not happen...?
+typeOfField :: Struct -> [G.Type] -> G.FieldName -> T G.Type
+typeOfField struct tyArgs fieldName = do
+    substitutions <- pure $ zip (map fst (G.unTyFormals $ st_formals struct)) tyArgs
+    case List.find (\x -> fieldName == (fst x)) (st_fields struct) of
+        Just (_, t) -> pure $ substituteTypeVariables substitutions t
+        Nothing -> pure $ G.tyVoid -- Should not happen...?
 
 substituteTypeVariables :: [(G.TyVarName, G.Type)] -> G.Type -> G.Type
 substituteTypeVariables substitutions (G.TyVar var) =
@@ -694,7 +696,8 @@ translateExpression varEnv tyEnv (G.Select exp fieldName) = do
             translatedFieldTypes <- mapM (translateType tyEnv) substitutedFields
             patterns <- pure $ map (generateSelectPattern fieldName) (zip translatedFieldTypes (st_fields goStruct))
             translatedTyArgs <- mapM (translateType tyEnv) tyArgs
-            pure $ (typeOfField goStruct fieldName, TL.ExpCase translatedExpression [TL.PatClause (TL.PatConstr (TL.ConstrName $ structPrefix <> (G.unTyName name)) translatedTyArgs patterns) (TL.ExpVar selectVarName)])
+            resultType <- typeOfField goStruct tyArgs fieldName
+            pure $ (resultType, TL.ExpCase translatedExpression [TL.PatClause (TL.PatConstr (TL.ConstrName $ structPrefix <> (G.unTyName name)) translatedTyArgs patterns) (TL.ExpVar selectVarName)])
         _ -> failT ("Field selection requires a struct, but " ++ (show exp) ++ " is not a struct")
 translateExpression varEnv tyEnv (G.BinOp binOp left right) = do
     (tl, translatedLeft) <- translateExpression varEnv tyEnv left
