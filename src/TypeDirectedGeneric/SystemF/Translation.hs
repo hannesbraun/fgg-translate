@@ -367,21 +367,19 @@ generateCoercionAbs tyEnv originalType targetType = if originalType == targetTyp
         pure $ (coercionType, TL.ExpAbs originalVarName translatedOrigType originalExp)
     else generateCoercionAbs' tyEnv originalType targetType
 generateCoercionAbs' :: TyEnv -> G.Type -> G.Type -> T (TL.Ty, TL.Exp)
-generateCoercionAbs' tyEnv (G.TyVar var) targetType = do
-    ty <- lookupTyVar var tyEnv
-    generateCoercionAbs' tyEnv ty targetType
 generateCoercionAbs' tyEnv originalType (G.TyVar targetTyVar) = do
     ty <- lookupTyVar targetTyVar tyEnv
     generateCoercionAbs' tyEnv originalType ty
 generateCoercionAbs' tyEnv originalType targetType = do
     originalVarName <- pure $ TL.VarName "original"
     originalExp <- pure $ TL.ExpVar originalVarName
+    (originalTypeSubstituted, originalExpSubstituted) <- applyCoercion tyEnv (originalType, originalExp)
     translatedOrigType <- translateType tyEnv originalType
     translatedTargetType <- translateType tyEnv targetType
     coercionType <- pure $ TL.TyArrow translatedOrigType translatedTargetType
     -- todo need coercion
-    --targetIsSupertype <- isSubtype tyEnv targetType originalType
-    --when (not targetIsSupertype) (failT $ "Coercion from " ++ (prettyS originalType) ++ " to " ++ (prettyS targetType) ++ " not possible (not a subtype)")
+    --targetIsSupertype <- isSubtype tyEnv targetType originalTypeSubstituted
+    --when (not targetIsSupertype) (failT $ "Coercion from " ++ (prettyS originalTypeSubstituted) ++ " to " ++ (prettyS targetType) ++ " not possible (not a subtype)")
     classifiedTargetType <- classifyTy targetType
     case classifiedTargetType of
         TyKindIface ifaceName typeArgs -> do
@@ -390,7 +388,7 @@ generateCoercionAbs' tyEnv originalType targetType = do
             methodSpecs <- pure $ if_methods iface
             coercions <- mapM (\(G.MeSpec meName _signature) -> do
                     emptyVarEnv <- mkVarEnv []
-                    (_, coerced) <- methodCallOnType emptyVarEnv tyEnv meName originalExp Nothing originalType Nothing
+                    (_, coerced) <- methodCallOnType emptyVarEnv tyEnv meName originalExpSubstituted Nothing originalTypeSubstituted Nothing
                     pure coerced
                 ) methodSpecs
             constr <- pure $ TL.ExpConstr (TL.ConstrName $ interfacePrefix <> (G.unTyName ifaceName)) translatedTypeArgs coercions
@@ -644,18 +642,22 @@ getCoercionAbsName tyVarName namedTargetType = TL.VarName $ (G.unTyVarName tyVar
 getCoercionAbs :: G.TyVarName -> G.TyName -> TL.Exp
 getCoercionAbs tyVarName namedTargetType = TL.ExpVar $ getCoercionAbsName tyVarName namedTargetType
 
-translateExpressionAndSub :: VarEnv -> TyEnv -> G.Exp -> T (G.Type, TL.Exp) -- todo remove this and move logic to correct place
-translateExpressionAndSub varEnv tyEnv exp = do
-    (resultType, translatedExpression) <- translateExpression varEnv tyEnv exp
-    case resultType of
+applyCoercion :: TyEnv -> (G.Type, TL.Exp) -> T (G.Type, TL.Exp)
+applyCoercion tyEnv (ty, exp) = do
+    case ty of
         G.TyVar name -> withCtx ("insertion of coercion application for " ++ prettyS exp) $ do
             resolved <- lookupTyVar name tyEnv
             tyName <- case resolved of
                 G.TyNamed name _ -> pure name
                 _ -> failT ("Type variable " ++ (prettyS name) ++ " did not resolve to a named type")
             coercionAbs <- pure $ getCoercionAbs name tyName
-            pure $ (resolved, (TL.ExpApp coercionAbs translatedExpression))
-        _ -> pure (resultType, translatedExpression)
+            pure $ (resolved, (TL.ExpApp coercionAbs exp))
+        _ -> pure (ty, exp)
+
+translateExpressionAndSub :: VarEnv -> TyEnv -> G.Exp -> T (G.Type, TL.Exp) -- todo remove this and move logic to correct place
+translateExpressionAndSub varEnv tyEnv exp = do
+    (resultType, translatedExpression) <- translateExpression varEnv tyEnv exp
+    applyCoercion tyEnv (resultType, translatedExpression)
 
 translateExpression :: VarEnv -> TyEnv -> G.Exp -> T (G.Type, TL.Exp)
 translateExpression _ _ (G.BoolLit value) = pure $ (tyBuiltinToType TyBool, TL.ExpBool value)
