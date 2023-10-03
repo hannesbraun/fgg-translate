@@ -676,8 +676,8 @@ applyCoercion tyEnv (ty, exp) = do
             pure $ (resolved, (TL.ExpApp coercionAbs exp))
         _ -> pure (ty, exp)
 
-applyCoercionTo :: (G.Type, TL.Exp) -> G.Type -> T (G.Type, TL.Exp)
-applyCoercionTo (ty, exp) resultType = 
+applyCoercionTo :: TyEnv -> (G.Type, TL.Exp) -> G.Type -> T (G.Type, TL.Exp)
+applyCoercionTo tyEnv (ty, exp) resultType = 
     if ty == resultType
     then pure (ty, exp)
     else do
@@ -688,7 +688,9 @@ applyCoercionTo (ty, exp) resultType =
                     _ -> failT ("Type variable " ++ (prettyS name) ++ " did not resolve to a named type")
                 coercionAbs <- pure $ getCoercionAbs name tyName
                 pure $ (resultType, (TL.ExpApp coercionAbs exp))
-            _ -> pure (ty, exp)
+            G.TyNamed _ _ -> do
+                coerced <- generateCoercion tyEnv (ty, exp) resultType
+                pure (resultType, coerced)
 
 translateExpressionAndSub :: VarEnv -> TyEnv -> G.Exp -> T (G.Type, TL.Exp) -- todo the usage of this function should probably be replaced with translateExpressionAndCoerce
 translateExpressionAndSub varEnv tyEnv exp = do
@@ -698,7 +700,7 @@ translateExpressionAndSub varEnv tyEnv exp = do
 translateExpressionAndCoerce :: VarEnv -> TyEnv -> (G.Exp, G.Type) -> T (G.Type, TL.Exp)
 translateExpressionAndCoerce varEnv tyEnv (exp, targetType) = do
     (resultType, translatedExpression) <- translateExpression varEnv tyEnv exp
-    applyCoercionTo (resultType, translatedExpression) targetType
+    applyCoercionTo tyEnv (resultType, translatedExpression) targetType
 
 translateExpression :: VarEnv -> TyEnv -> G.Exp -> T (G.Type, TL.Exp)
 translateExpression _ _ (G.BoolLit value) = pure $ (tyBuiltinToType TyBool, TL.ExpBool value)
