@@ -1,5 +1,5 @@
 /// TEST EVAL_GOOD:  (tuple-2 (Kt-Triple Kt-bool) #t)
-/// TEST_SYSTEMF EVAL_GOOD:  (tuple-2 (Kt-Triple Kt-bool) #t)
+/// TEST_SYSTEMF EVAL_GOOD:  (StructTriple #t #t #f)
 package main;
 
 import "fmt";

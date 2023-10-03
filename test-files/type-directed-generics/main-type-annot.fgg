@@ -1,5 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-Num (tuple-1 42))
-/// TEST_SYSTEMF EVAL_GOOD: (tuple-2 Kt-Num (tuple-1 42))
+/// TEST_SYSTEMF EVAL_GOOD: InterfaceI
 
 type I interface { }
 type Num struct { val int }
