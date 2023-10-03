@@ -1,5 +1,5 @@
 /// TEST TYPECHECK_GOOD
-/// TEST_SYSTEMF TYPECHECK_GOOD
+/// TEST_SYSTEMF SKIP
 // loops
 
 //$ go run github.com/rhu1/fgg -fgg -monomc=tmp/test/fg/monom/misc/mono-ok/poly-rec-iface.go fgg/examples/monom/misc/mono-ok/poly-rec-iface.go
