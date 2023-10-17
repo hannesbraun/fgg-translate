@@ -513,6 +513,8 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
                                                 Just x -> x
                                                 Nothing -> []
             substitutions <- pure $ zip (map fst (G.unTyFormals $ G.msig_tyArgs $ G.ms_sig spec)) methodTypeArgsUnpacked
+            -- Add type args from receiver to substitutions
+            substitutions <- pure $ substitutions ++ (zip (map fst (G.unTyFormals $ st_formals struct)) typeArgs)
             substitutedResultType <- pure $ substituteTypeVariables substitutions resultType
             substMeTyArgs <- case methodTypeArgs of
                 Just meTyArgs -> inst (G.msig_tyArgs $ G.ms_sig spec) meTyArgs
@@ -539,17 +541,16 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
             formals <- pure $ if_formals iface
             translatedTypeArgs <- mapM (translateType tyEnv) typeArgs
             methodSpecs <- pure $ if_methods iface
-            substsWithSpecs <- case methodTypeArgs of -- todo mabye only on spec?
-                Just meTyArgs -> do
-                    substs <- mapM ((flip inst) meTyArgs) (map (\x -> G.msig_tyArgs $ G.ms_sig x) methodSpecs)
-                    pure $ zip substs methodSpecs
-                Nothing -> pure $ zip (take (length methodSpecs) $ repeat Map.empty) methodSpecs
-            substRecvTyArgs <- ((flip inst) typeArgs) formals
-            methodSpecs <- pure $ map (\(subst, spec) -> G.applyTySubst (Map.union subst substRecvTyArgs) spec) substsWithSpecs
+            substRecvTyArgs <- inst formals typeArgs
+            methodSpecs <- pure $ map (\spec -> G.applyTySubst substRecvTyArgs spec) methodSpecs
             maybeSpec <- pure $ List.find (\x -> (G.ms_name x) == meName) methodSpecs
             spec <- case maybeSpec of
                 Just x -> pure x
                 Nothing -> failT ("Method for interface not found: " ++ (show meName))
+            subst <- case methodTypeArgs of
+                Just meTyArgs -> inst (G.msig_tyArgs $ G.ms_sig spec) meTyArgs
+                Nothing -> pure $ Map.empty
+            spec <- pure $ G.applyTySubst subst spec
             resultType <- pure $ G.msig_res $ G.ms_sig spec
             methodTypeArgsUnpacked <- pure $ case methodTypeArgs of
                                                 Just x -> x
