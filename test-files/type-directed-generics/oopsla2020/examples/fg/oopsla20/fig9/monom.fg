@@ -1,5 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-ConsᐸBoolᐸᐳᐳ (tuple-2 (tuple-2 Kt-FFᐸᐳ tuple-0) (tuple-2 Kt-ConsᐸBoolᐸᐳᐳ (tuple-2 (tuple-2 Kt-TTᐸᐳ tuple-0) (tuple-2 Kt-NilᐸBoolᐸᐳᐳ tuple-0)))))
-/// TEST_SYSTEMF EVAL_GOOD: (tuple-2 Kt-ConsᐸBoolᐸᐳᐳ (tuple-2 (tuple-2 Kt-FFᐸᐳ tuple-0) (tuple-2 Kt-ConsᐸBoolᐸᐳᐳ (tuple-2 (tuple-2 Kt-TTᐸᐳ tuple-0) (tuple-2 Kt-NilᐸBoolᐸᐳᐳ tuple-0)))))
+/// TEST_SYSTEMF EVAL_GOOD: (InterfaceListᐸBoolᐸᐳᐳ #<procedure>)
 /* This is monom output for fig 9, i.e.:
  *     go run github.com/rhu1/fgg -fgg -monomc=-- fgg/examples/oopsla20/fi6/lists.fgg
  */

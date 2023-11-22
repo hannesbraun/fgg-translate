@@ -1,5 +1,5 @@
 /// TEST EVAL_GOOD: ("(tuple-2 Kt-Pos (tuple-1 (tuple-2 Kt-Zero tuple-0)))"+"(tuple-2 Kt-Pos (tuple-1 (tuple-2 Kt-Pos (tuple-1 (tuple-2 Kt-Zero tuple-0)))))")
-/// TEST_SYSTEMF EVAL_GOOD: ("(tuple-2 Kt-Pos (tuple-1 (tuple-2 Kt-Zero tuple-0)))"+"(tuple-2 Kt-Pos (tuple-1 (tuple-2 Kt-Pos (tuple-1 (tuple-2 Kt-Zero tuple-0)))))")
+/// TEST_SYSTEMF EVAL_GOOD: ("(StructPos (InterfaceInt #<procedure> #<procedure> #<procedure> #<procedure> #<procedure> #<procedure> #<procedure> #<procedure> #<procedure>))"+"(StructPos (InterfaceInt #<procedure> #<procedure> #<procedure> #<procedure> #<procedure> #<procedure> #<procedure> #<procedure> #<procedure>))")
 
 //$ go run github.com/rhu1/fgg -fgg -eval=-1 -v fgg/examples/oopsla20/fig8/expression.fgg
 

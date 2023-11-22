@@ -1,5 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-One tuple-0)
-/// TEST_SYSTEMF EVAL_GOOD: (tuple-2 Kt-One tuple-0)
+/// TEST_SYSTEMF EVAL_GOOD: StructOne
 
 //$ go run github.com/rhu1/fgg -fgg -v -eval=-1 fgg/examples/expression/expression-fgg.fgg
 //$ go run github.com/rhu1/fgg -fgg -v -monomc=tmp/monom/scratch/scratch.go fgg/examples/expression/expression-fgg.fgg

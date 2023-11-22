@@ -1,5 +1,5 @@
 /// TEST TYPECHECK_BAD: B is not a subtype of A
-/// TEST_SYSTEMF TYPECHECK_BAD: B is not a subtype of A
+/// TEST_SYSTEMF TYPECHECK_BAD: Cannot supply B when A is expected
 
 package main;
 type A struct {};

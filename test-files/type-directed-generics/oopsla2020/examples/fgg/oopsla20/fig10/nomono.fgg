@@ -1,5 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 (Kt-Box (tuple-1 (Kt-Box (tuple-1 (Kt-Box (tuple-1 (Kt-Box (tuple-1 Kt-D)))))))) (tuple-1 (tuple-2 (Kt-Box (tuple-1 (Kt-Box (tuple-1 (Kt-Box (tuple-1 Kt-D)))))) (tuple-1 (tuple-2 (Kt-Box (tuple-1 (Kt-Box (tuple-1 Kt-D)))) (tuple-1 (tuple-2 (Kt-Box (tuple-1 Kt-D)) (tuple-1 (tuple-2 Kt-D tuple-0)))))))))
-/// TEST_SYSTEMF EVAL_GOOD: (tuple-2 (Kt-Box (tuple-1 (Kt-Box (tuple-1 (Kt-Box (tuple-1 (Kt-Box (tuple-1 Kt-D)))))))) (tuple-1 (tuple-2 (Kt-Box (tuple-1 (Kt-Box (tuple-1 (Kt-Box (tuple-1 Kt-D)))))) (tuple-1 (tuple-2 (Kt-Box (tuple-1 (Kt-Box (tuple-1 Kt-D)))) (tuple-1 (tuple-2 (Kt-Box (tuple-1 Kt-D)) (tuple-1 (tuple-2 Kt-D tuple-0)))))))))
+/// TEST_SYSTEMF EVAL_GOOD: InterfaceAny
 
 //$ go run github.com/rhu1/fgg -fgg -monomc=tmp/fg/oopsla20/fig10/nomono.go -v fgg/examples/oopsla20/fig10/nomono.fgg
 //$ go run github.com/rhu1/fgg -eval=-1 -v tmp/fg/oopsla20/fig10/nomono.go

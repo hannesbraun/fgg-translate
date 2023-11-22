@@ -1,5 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 (Kt-Cons (tuple-1 Kt-Bool)) (tuple-2 (tuple-2 Kt-FF tuple-0) (tuple-2 (Kt-Cons (tuple-1 Kt-Bool)) (tuple-2 (tuple-2 Kt-TT tuple-0) (tuple-2 (Kt-Nil (tuple-1 Kt-Bool)) tuple-0)))))
-/// TEST_SYSTEMF EVAL_GOOD: (tuple-2 (Kt-Cons (tuple-1 Kt-Bool)) (tuple-2 (tuple-2 Kt-FF tuple-0) (tuple-2 (Kt-Cons (tuple-1 Kt-Bool)) (tuple-2 (tuple-2 Kt-TT tuple-0) (tuple-2 (Kt-Nil (tuple-1 Kt-Bool)) tuple-0)))))
+/// TEST_SYSTEMF EVAL_GOOD: (InterfaceList #<procedure>)
 
 //$ go run github.com/rhu1/fgg -fgg -eval=-1 -v fgg/examples/oopsla20/fig6/lists.fgg
 

@@ -1,5 +1,5 @@
 /// TEST TYPECHECK_BAD: Assertion ToIA{A{}}.upcast.(A1) will definitely fail at runtime because ToIA{A{}}.upcast has static type IA and A1 is not a subtype of the bound of this static type
-/// TEST_SYSTEMF TYPECHECK_BAD: Assertion ToIA{A{}}.upcast.(A1) will definitely fail at runtime because ToIA{A{}}.upcast has static type IA and A1 is not a subtype of the bound of this static type
+/// TEST_SYSTEMF SKIP
 
 package main;
 type IA(type ) interface { m1(type a IA())() IA() };

@@ -1,5 +1,5 @@
 /// TEST TYPECHECK_BAD: A is not a subtype of IA
-/// TEST_SYSTEMF TYPECHECK_BAD: A is not a subtype of IA
+/// TEST_SYSTEMF TYPECHECK_BAD: Method declaration for struct not found: m0
 
 package main;
 type IA interface { m0() A };

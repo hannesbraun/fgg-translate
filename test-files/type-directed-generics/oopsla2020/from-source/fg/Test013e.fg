@@ -1,5 +1,5 @@
 /// TEST TYPECHECK_BAD: Invalid number of arguments for method m1 of struct A
-/// TEST_SYSTEMF TYPECHECK_BAD: Invalid number of arguments for method m1 of struct A
+/// TEST_SYSTEMF TYPECHECK_BAD: Function of type (Tuple1@(StructA@)) -> StructA@ applied to value of type Tuple0@
 
 package main;
 type A struct {};

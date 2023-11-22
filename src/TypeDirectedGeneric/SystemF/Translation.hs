@@ -444,7 +444,7 @@ coerceArgument tyEnv source targetType = do
     case (classifiedTarget, classifiedSource) of
         (TyKindStruct targetName _constraints, TyKindStruct sourceName _tyArgs) -> do
             sameStruct <- pure $ targetName == sourceName
-            when (not sameStruct) $ failT $ "Cannot supply " ++ prettyS sourceName ++ " when " ++ prettyS sourceName ++ " is expected"
+            when (not sameStruct) $ failT $ "Cannot supply " ++ prettyS sourceName ++ " when " ++ prettyS targetName ++ " is expected"
             pure source
         (TyKindTyVar _, _) -> pure source -- If this dosn't work, the translation should already fail on the coercion arguments
         (TyKindIface _ _, TyKindTyVar tyVarName) -> do
@@ -476,7 +476,7 @@ methodCall varEnv tyEnv methodVar receiver args expectedArgTypes methodTypeArgs 
                             (_, coercedReceiver) <- coerceArgument tyEnv (receiverType, translatedReceiverExpression) expectedReceiverType
                             pure $ TL.ExpApp recvCoercionsApplied coercedReceiver
                         Nothing -> pure $ methodVar
-    methodCoercionsApplied <- case methodTypeArgs of
+    (methodCoercionsApplied, substitutions) <- case methodTypeArgs of
         Just methodTypeArgs -> withCtx "methodCoercionArgs" $ do
             translatedMethodTypeArgs <- mapM (translateType tyEnv) methodTypeArgs
             methodTypesApplied <- pure $ generateTypeApplication receiverApplied translatedMethodTypeArgs
@@ -485,14 +485,16 @@ methodCall varEnv tyEnv methodVar receiver args expectedArgTypes methodTypeArgs 
             generatedCoercions <- mapM (\(originalType, targetType) -> generateCoercionAbs tyEnv originalType targetType) (zip methodTypeArgs substitutedMethodConstraints)
             (coercionTypes, generatedCoercions) <- pure $ unzip generatedCoercions
             methodCoercions <- pure $ TL.ExpConstr (tupleName $ length generatedCoercions) coercionTypes generatedCoercions
-            pure $ TL.ExpApp methodTypesApplied methodCoercions
-        Nothing -> pure receiverApplied
+            pure $ (TL.ExpApp methodTypesApplied methodCoercions, substitutions)
+        Nothing -> pure (receiverApplied, [])
     argsApplied <- case args of
         Just args -> withCtx "funArgs" $ do
+            substitutedExpectedArgTypes <- pure $ map (substituteTypeVariables substitutions) expectedArgTypes
             translatedArgs <- mapM (translateExpression varEnv tyEnv) args
-            translatedArgs <- coerceArguments tyEnv translatedArgs expectedArgTypes
-            argTypes <- mapM (translateType tyEnv) (map fst translatedArgs)
-            pure $ TL.ExpApp methodCoercionsApplied (TL.ExpConstr (tupleName $ length translatedArgs) argTypes (map snd translatedArgs))
+            translatedArgs <- coerceArguments tyEnv translatedArgs substitutedExpectedArgTypes
+            argTypes <- pure $ map fst translatedArgs
+            translatedArgTypes <- mapM (translateType tyEnv) argTypes
+            pure $ TL.ExpApp methodCoercionsApplied (TL.ExpConstr (tupleName $ length translatedArgs) translatedArgTypes (map snd translatedArgs))
         Nothing -> pure methodCoercionsApplied
     pure $ argsApplied
 

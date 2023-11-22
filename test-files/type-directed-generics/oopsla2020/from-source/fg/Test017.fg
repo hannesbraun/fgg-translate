@@ -1,5 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-ToAny (tuple-1 1))
-/// TEST_SYSTEMF EVAL_GOOD: (tuple-2 Kt-ToAny (tuple-1 1))
+/// TEST_SYSTEMF EVAL_GOOD: (StructToAny InterfaceAny)
 
 package main;
 type Any interface {};

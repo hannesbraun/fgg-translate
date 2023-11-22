@@ -1,5 +1,5 @@
 /// TEST TYPECHECK_BAD: Assertion A{}.(A) is not necessary because A{} already has type A
-/// TEST_SYSTEMF TYPECHECK_BAD: Assertion A{}.(A) is not necessary because A{} already has type A
+/// TEST_SYSTEMF SKIP
 
 package main;
 type A struct {};

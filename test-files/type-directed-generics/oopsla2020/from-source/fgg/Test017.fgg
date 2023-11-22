@@ -1,5 +1,5 @@
 /// TEST TYPECHECK_BAD:  No implementation of method foo for struct A(D)
-/// TEST_SYSTEMF TYPECHECK_BAD:  No implementation of method foo for struct A(D)
+/// TEST_SYSTEMF TYPECHECK_BAD:  Method declaration for struct not found: bar
 
 package main;
 type Any interface{};

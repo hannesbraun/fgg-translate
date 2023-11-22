@@ -1,5 +1,5 @@
 /// TEST TYPECHECK_BAD: A1 is not a subtype of A
-/// TEST_SYSTEMF TYPECHECK_BAD: A1 is not a subtype of A
+/// TEST_SYSTEMF TYPECHECK_BAD: Can only coerce to an interface, not to A
 
 package main;
 type Any(type ) interface {};

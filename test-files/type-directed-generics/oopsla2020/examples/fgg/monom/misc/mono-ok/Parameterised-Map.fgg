@@ -1,5 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 (Kt-ParamBox (tuple-1 Kt-Int)) (tuple-1 (tuple-2 Kt-Int tuple-0)))
-/// TEST_SYSTEMF EVAL_GOOD: (tuple-2 (Kt-ParamBox (tuple-1 Kt-Int)) (tuple-1 (tuple-2 Kt-Int tuple-0)))
+/// TEST_SYSTEMF EVAL_GOOD: (InterfaceBox #<procedure>)
 
 package main;
 

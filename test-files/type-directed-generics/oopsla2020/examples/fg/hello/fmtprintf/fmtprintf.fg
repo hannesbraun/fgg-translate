@@ -1,5 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-World tuple-0)
-/// TEST_SYSTEMF EVAL_GOOD: (tuple-2 Kt-World tuple-0)
+/// TEST_SYSTEMF EVAL_GOOD: StructWorld
 
 //$ go run github.com/rhu1/fgg -v -eval=10 fg/examples/hello/fmtprintf.go
 // Cf.

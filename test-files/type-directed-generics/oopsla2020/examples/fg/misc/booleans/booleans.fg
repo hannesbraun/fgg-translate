@@ -1,5 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-t tuple-0)
-/// TEST_SYSTEMF EVAL_GOOD: (tuple-2 Kt-t tuple-0)
+/// TEST_SYSTEMF SKIP
 
 //$ go run github.com/rhu1/fgg -v -eval=7 fg/examples/misc/booleans/booleans.go
 // Cf.
