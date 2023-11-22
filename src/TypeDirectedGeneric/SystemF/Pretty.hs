@@ -37,9 +37,11 @@ instance PrettyPrec Exp where
       ExpConstr k [] [] ->
         pretty k
       ExpConstr k [] args ->
-        pretty k <> text "{" <> prettyCommas args <> text "}"
+        let args' = map pretty args
+        in  align (pretty k <> text "{" <> line <> indent 2 (vcat args') <> line <> text "}")
       ExpConstr k tys args ->
-        pretty k <> text "@<" <> prettyCommas tys <> text "> {" <> prettyCommas args <> text "}"
+        let args' = map pretty args
+        in  align (pretty k <> text "@<" <> prettyCommas tys <> text "> {" <> line <> indent 2 (vcat args') <> line <> text "}")
       ExpApp e1 e2 ->
         withParens prec funAppPrec $
         prettyPrec funAppPrec e1 <+> prettyPrec funAppPrec e2
