@@ -3,7 +3,6 @@
 module TypeDirectedGeneric.SystemF.Translation where
 
 import Control.Monad
---import Control.Monad.Extra
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -286,56 +285,11 @@ methods tyEnv ty = withCtx ("computing methods for " ++ prettyS ty) $ do
             subst <- inst (if_formals iface) args
             pure $ G.applyTySubst subst (if_methods iface)
 
---methodsStructOrBuiltin :: TyEnv -> G.Type -> T (Map.Map G.MeName (G.MeSpec, TL.Exp))
---methodsStructOrBuiltin tenv tau = do
---  k <- classifyTy tau
---  case k of
---    TyKindTyVar _ ->
---      failT ("Type " ++ prettyS tau ++ " is not a struct type")
---    TyKindIface _ _ ->
---      failT ("Type " ++ prettyS tau ++ " is not a struct type")
---    TyKindBuiltin t -> getMethods (tyBuiltinToTyName t) []
---    TyKindStruct t args -> getMethods t args
---  where
---    getMethods t args = do
---      ms <- allMethodsForStructOrBuiltin t
---      l <- flip mapMaybeM ms $ \m -> do
---             mSubst <- tryInst tenv (me_formals m) args
---             case mSubst of
---               Left err -> do
---                 trace
---                   ("Cannot instantiate declaration of " <> prettyT (me_spec m) <> " for " <>
---                    prettyT t <> " for arguments " <> prettyT args <> ": " <> T.pack err)
---                 pure Nothing
---               Right (subst, e) ->
---                 let spec = G.applyTySubst subst (me_spec m)
---                 in pure $ Just (G.ms_name spec, (spec, e))
---      pure (Map.fromList l)
-
 -- taken from existing type directed translation
 inst :: G.TyFormals -> [G.Type] -> T G.TySubst
 inst (G.TyFormals formals) types = do
     when (length formals /= length types) $ failT ("Cannot instantiate " ++ prettyS formals ++ " with " ++ prettyS types ++ ": mismatch in number of arguments")
     pure $ Map.fromList (zipWith (\(a, _) replacement -> (a, replacement)) formals types)
-
---tryInst :: TyEnv -> G.TyFormals -> [G.Type] -> T (Either String (G.TySubst, TL.Exp))
---tryInst tyEnv (G.TyFormals formals) sigmas
---    | length formals /= length sigmas = pure (Left "arity mismatch")
---    | otherwise = do
---        let subst = Map.fromList (zipWith (\(a, _) sigma -> (a, sigma)) formals sigmas)
---            taus = map (maybeType . snd) formals
---        
---        eisM <-
---            catchT
---                (flip mapM (zip sigmas taus) $ \(sigma, tau) ->
---                 dictCons tyEnv sigma (G.applyTySubst subst tau))
---        case eisM of
---          Left e -> pure (Left ("bound mismatch: " ++ e))
---          Right eis'' -> do
---            eis <- mapM (translateType tyEnv) sigmas
---            eis' <- mapM (transTypeStar tyEnv) sigmas
---            let triples = map (\(e, e', e'') -> TL.mkTriple e e' e'') (zip3 eis eis' eis'')
---            pure (Right (subst, TL.mkTuple triples))
 
 isSubtype :: TyEnv -> G.Type -> G.Type -> T Bool
 isSubtype tyEnv supertype possibleSubtype = do
@@ -379,9 +333,6 @@ generateCoercionAbs' tyEnv originalType targetType = do
     translatedOrigType <- translateType tyEnv originalType
     translatedTargetType <- translateType tyEnv targetType
     coercionType <- pure $ TL.TyArrow translatedOrigType translatedTargetType
-    -- todo need coercion
-    --targetIsSupertype <- isSubtype tyEnv targetType originalTypeSubstituted
-    --when (not targetIsSupertype) (failT $ "Coercion from " ++ (prettyS originalTypeSubstituted) ++ " to " ++ (prettyS targetType) ++ " not possible (not a subtype)")
     classifiedTargetType <- classifyTy targetType
     case classifiedTargetType of
         TyKindIface ifaceName typeArgs -> do
@@ -411,9 +362,6 @@ translateBindings varEnv tyEnv ((name, ty, exp):otherBindings) mainExp = withCtx
     translatedName <- pure $ translateVarName name
     (expressionType, translatedExpression) <- withCtx "translation of expression to bind" $ translateExpression varEnv tyEnv exp
     bindingType <- case ty of
-        --Just x -> case x of
-        --    G.TyVar tyVarName -> lookupTyVar tyVarName tyEnv
-        --    G.TyNamed _ _ -> pure x
         Just x -> pure x
         Nothing -> pure expressionType
     coercedExpression <- if bindingType /= expressionType
@@ -560,11 +508,6 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
             substitutions <- pure $ zip (map fst (G.unTyFormals $ G.msig_tyArgs $ G.ms_sig spec)) methodTypeArgsUnpacked
             substitutedResultType <- pure $ substituteTypeVariables substitutions resultType
             expectedArgTypes <- pure $ map snd $ G.msig_args $ G.ms_sig spec
-            --expectedArgTypes <- case methodTypeArgs of
-            --    Just meTyArgs -> do
-            --        subst <- inst (G.msig_tyArgs $ G.ms_sig spec) meTyArgs
-            --        pure $ G.applyTySubst subst expectedArgTypes
-            --    Nothing -> pure expectedArgTypes
             translatedMethodSpecs <- mapM (translateMethodSpec tyEnv Nothing) methodSpecs
             ifaceMethodNames <- pure $ map (\(G.MeSpec name _) -> name) methodSpecs
             ifaceTypesWithName <- pure $ zip ifaceMethodNames translatedMethodSpecs
@@ -572,11 +515,6 @@ methodCallOnType varEnv tyEnv meName translatedReceiverExpression args receiverT
             methodVar <- pure $ TL.ExpVar selectVarName
             receiverConstraints <- pure $ [] -- these contraints are not of any use
             constraints <- pure $ map (\x -> maybeType (snd x)) (G.unTyFormals $ G.msig_tyArgs $ G.ms_sig spec)
-            --constraints <- case methodTypeArgs of
-            --    Just meTyArgs -> do
-            --        subst <- inst (G.msig_tyArgs $ G.ms_sig spec) meTyArgs
-            --        pure $ G.applyTySubst subst constraints
-            --    Nothing -> pure constraints
             argsApplied <- methodCall varEnv tyEnv methodVar Nothing args expectedArgTypes methodTypeArgs receiverConstraints constraints (G.msig_tyArgs $ G.ms_sig spec)
             outerCase <- pure $ TL.ExpCase translatedReceiverExpression [TL.PatClause (TL.PatConstr (TL.ConstrName $ interfacePrefix <> (G.unTyName typeName)) translatedTypeArgs patterns) argsApplied]
             pure $ (substitutedResultType, outerCase)
