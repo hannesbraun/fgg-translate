@@ -17,10 +17,12 @@ import Control.Monad
 import Text.Groom
 import Text.Regex.TDFA hiding (match)
 import Text.Printf
+import Control.Monad.Extra
 
 data TranslationType
   = Normal
   | SystemF
+  deriving (Eq, Show)
 
 translationTypeAnnotation :: TranslationType -> String
 translationTypeAnnotation transType = case transType of
@@ -33,9 +35,10 @@ data TestSpec
   | EvalGood T.Text
   | EvalBad T.Text
   | Skip
+  deriving (Eq, Show)
 
 parseTestSpec :: T.Text -> Either String TestSpec
-parseTestSpec t =
+parseTestSpec (T.strip -> t) =
   if | t == "TYPECHECK_GOOD" -> Right TypecheckGood
      | t == "SKIP" -> Right Skip
      | otherwise ->
@@ -64,7 +67,7 @@ reportOk path transType idx msg =
 
 reportError :: FilePath -> TranslationType -> String -> [T.Text] -> IO ()
 reportError path transType msg trace = do
-  putStrLn ("ERROR" ++ (translationTypeAnnotation transType) ++ " " ++ path ++ ": " ++ msg)
+  putStrLn ("ERROR" ++ translationTypeAnnotation transType ++ " " ++ path ++ ": " ++ msg)
   outputTrace trace
   fail "Test ERROR"
 
@@ -138,26 +141,39 @@ runTest (path, idx) = do
   src <- T.readFile path
   testLines <- case T.lines src of
     [] -> fail ("File " ++ path ++ " is empty")
-    lines -> pure (take 2 lines)
-  result <- mapM runTestForLine testLines
-  case length (filter (\x -> x) result) of
-    0 -> fail ("File " ++ path ++ " does not have a magic test header in the first lines")
-    _ -> pure ()
+    lines -> pure (take 5 lines)
+  specs <- mapMaybeM parseLine testLines
+  specs2 <- transSpecs specs
+  forM_ specs2 $ \(tt, spec) -> runTestForSpec path idx spec tt
   where
-    runTestForLine :: T.Text -> IO Bool
-    runTestForLine line =
-      let rawSpec = case T.stripPrefix "/// TEST " (T.strip line) of
-                      Nothing -> case T.stripPrefix "/// TEST_SYSTEMF " (T.strip line) of
-                        Nothing -> Nothing
-                        Just spec -> Just (SystemF, spec)
-                      Just spec -> Just (Normal, spec)
-      in  case rawSpec of
-            Nothing -> pure False
-            Just (transType, spec) -> case parseTestSpec spec of
-              Left err -> fail ("Invalid test spec in test header of " ++ path ++ ": " ++ err)
-              Right spec -> do
-                runTestForSpec path idx spec transType
-                pure True
+    transSpecs :: [(TranslationType, TestSpec)] -> IO [(TranslationType, TestSpec)]
+    transSpecs specs =
+      case specs of
+        [] -> fail ("File " ++ path ++ " does not have a magic test header in the first lines")
+        [(Normal, s)] -> pure [(Normal, s), (SystemF, s)]
+        [(t1, s1), (t2, s2)]
+          | t1 == t2 ->
+            fail ("File " ++ path ++ " has more than one test spec for type " ++ show t1)
+          | s1 == s2 -> do
+            fail ("File " ++ path ++ " has the same test spec for " ++ show t1 ++ " and " ++ show t2)
+          | otherwise -> pure specs
+        _ -> fail ("File " ++ path ++ " has more than two test specs")
+    parseLine :: T.Text -> IO (Maybe (TranslationType, TestSpec))
+    parseLine line = do
+      let mRawSpec =
+            case T.stripPrefix "/// TEST_SYSTEMF" (T.strip line) of
+              Nothing ->
+                case T.stripPrefix "/// TEST " (T.strip line) of
+                  Nothing -> Nothing
+                  Just spec -> Just (Normal, spec)
+              Just spec -> Just (SystemF, spec)
+      case mRawSpec of
+        Nothing -> pure Nothing
+        Just (tt, rawSpec) ->
+          case parseTestSpec rawSpec of
+            Left _err ->
+              fail ("Invalid test spec in test header of " ++ path ++ ": " ++ T.unpack rawSpec)
+            Right spec -> pure $ Just (tt, spec)
 
 runAllTestsForTpypeDirectedGenerics :: IO ()
 runAllTestsForTpypeDirectedGenerics = do

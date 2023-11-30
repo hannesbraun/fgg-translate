@@ -79,6 +79,7 @@ tests:
     - -Wredundant-constraints
     dependencies:
     - HTF
+    - extra
     - filepath
     - gotrans
     - process
