@@ -1,5 +1,4 @@
 /// TEST EVAL_GOOD: 755
-/// TEST_SYSTEMF EVAL_GOOD: 755
 
 type I1 interface { m1() int }
 type I2 interface { m2() int }

@@ -1,5 +1,4 @@
 /// TEST TYPECHECK_GOOD
-/// TEST_SYSTEMF TYPECHECK_GOOD
 
 package main;
 type IA interface { m1(x1 A) A };

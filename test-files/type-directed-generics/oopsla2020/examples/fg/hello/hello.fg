@@ -1,5 +1,4 @@
 /// TEST TYPECHECK_GOOD
-/// TEST_SYSTEMF TYPECHECK_GOOD
 
 //$ go run github.com/rhu1/fgg -v -eval=10 fg/examples/hello/hello.go
 // Cf.

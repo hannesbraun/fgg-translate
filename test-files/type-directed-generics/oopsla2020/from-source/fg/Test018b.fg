@@ -1,5 +1,4 @@
 /// TEST TYPECHECK_BAD: Duplicate method declaration for receiver A and method m
-/// TEST_SYSTEMF TYPECHECK_BAD: Duplicate method declaration for receiver A and method m
 
 package main;
 type A struct {};

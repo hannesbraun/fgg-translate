@@ -1,5 +1,4 @@
 /// TEST TYPECHECK_GOOD
-/// TEST_SYSTEMF TYPECHECK_GOOD
 // loops
 //$ go run github.com/rhu1/fgg -fgg -v -monomc=-- fgg/examples/monom/misc/mono-ko/nested-fix.go
 
