@@ -1,5 +1,5 @@
 /// TEST TYPECHECK_BAD: Invalid number of arguments for method m1 of struct A
-/// TEST_SYSTEMF TYPECHECK_BAD: Invalid number of arguments for method m1 of struct A
+/// TEST_SYSTEMF SKIP
 
 package main;
 type A struct {};

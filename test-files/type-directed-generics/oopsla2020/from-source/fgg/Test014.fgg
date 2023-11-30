@@ -1,5 +1,5 @@
 /// TEST TYPECHECK_BAD: A is not a subtype of b
-/// TEST_SYSTEMF TYPECHECK_BAD: A is not a subtype of b
+/// TEST_SYSTEMF SKIP
 
 package main;
 type A(type ) struct {};

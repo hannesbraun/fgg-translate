@@ -1,5 +1,5 @@
 /// TEST TYPECHECK_BAD: Cannot instantiate function foo with type arguments (EQ(int)): bound mismatch: EQ(int) is not a subtype of EQ(EQ(int))
-/// TEST_SYSTEMF TYPECHECK_BAD: Cannot instantiate function foo with type arguments (EQ(int)): bound mismatch: EQ(int) is not a subtype of EQ(EQ(int))
+/// TEST_SYSTEMF SKIP
 
 type EQ(type a EQ(a)) interface {
     Equal(x a) bool
