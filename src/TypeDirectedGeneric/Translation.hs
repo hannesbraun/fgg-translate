@@ -1,34 +1,35 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
+
 module TypeDirectedGeneric.Translation (
-
-  runTranslation, runTranslation', stdlibForTrans
-
+  runTrans,
+  runTranslation,
+  runTranslation',
+  stdlibForTrans,
 ) where
 
-import Common.Utils
-import Common.PrettyUtils
-import Common.Types
 import qualified Common.FGGAST as G
 import Common.FGGPretty ()
-import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
+import Common.PrettyUtils
+import Common.Types
+import Common.Utils
 import Prettyprinter
 import TypeDirectedGeneric.TransCommon
+import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
 
-import qualified Data.Set as Set
-import Data.Map.Strict (Map)
-import Data.Generics
-import qualified Data.Map.Strict as Map
-import Control.Monad.Identity
 import Control.Monad.Extra
-import qualified Data.Text as T
+import Data.Generics
 import qualified Data.List as List
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
 import Data.Maybe
-import System.IO
+import qualified Data.Set as Set
+import qualified Data.Text as T
 import System.Exit
+import System.IO
 import Text.RawString.QQ
 
 --
@@ -87,11 +88,11 @@ methods tenv tau = withCtx ("computing methods for " ++ prettyS tau) $ do
       pure $ map fst (Map.elems m)
     TyKindIface t args -> do
       methodsIface t args
-  where
-    methodsIface t args = do
-      iface <- lookupIface t
-      subst <- inst (if_formals iface) args
-      pure $ G.applyTySubst subst (if_methods iface)
+ where
+  methodsIface t args = do
+    iface <- lookupIface t
+    subst <- inst (if_formals iface) args
+    pure $ G.applyTySubst subst (if_methods iface)
 
 -- <S, E> \in methods(\Delta, \tau_S)
 methodsStructOrBuiltin :: TyEnv -> G.Type -> T (Map G.MeName (G.MeSpec, TL.Exp))
@@ -104,21 +105,28 @@ methodsStructOrBuiltin tenv tau = do
       failT ("Type " ++ prettyS tau ++ " is not a struct type")
     TyKindBuiltin t -> getMethods (tyBuiltinToTyName t) []
     TyKindStruct t args -> getMethods t args
-  where
-    getMethods t args = do
-      ms <- allMethodsForStructOrBuiltin t
-      l <- flip mapMaybeM ms $ \m -> do
-             mSubst <- tryInst tenv (me_formals m) args
-             case mSubst of
-               Left err -> do
-                 trace
-                   ("Cannot instantiate declaration of " <> prettyT (me_spec m) <> " for " <>
-                    prettyT t <> " for arguments " <> prettyT args <> ": " <> T.pack err)
-                 pure Nothing
-               Right (subst, e) ->
-                 let spec = G.applyTySubst subst (me_spec m)
-                 in pure $ Just (G.ms_name spec, (spec, e))
-      pure (Map.fromList l)
+ where
+  getMethods t args = do
+    ms <- allMethodsForStructOrBuiltin t
+    l <- flip mapMaybeM ms $ \m -> do
+      mSubst <- tryInst tenv (me_formals m) args
+      case mSubst of
+        Left err -> do
+          trace
+            ( "Cannot instantiate declaration of "
+                <> prettyT (me_spec m)
+                <> " for "
+                <> prettyT t
+                <> " for arguments "
+                <> prettyT args
+                <> ": "
+                <> T.pack err
+            )
+          pure Nothing
+        Right (subst, e) ->
+          let spec = G.applyTySubst subst (me_spec m)
+           in pure $ Just (G.ms_name spec, (spec, e))
+    pure (Map.fromList l)
 
 --
 -- Translation of types
@@ -136,22 +144,28 @@ boundFunOfTyvar = TL.thdOfTriple
 -- \Delta,\mathcal T |- \tau ~> E
 transType' :: TyEnv -> TyExpEnv -> G.Type -> T TL.Exp
 transType' te@(TyEnv tenv) ee@(GenTyExpEnv expEnv) tau =
-    case tau of
-      G.TyVar a ->
-          case (Map.lookup a tenv, Map.lookup a expEnv) of
-            (Just _, Nothing) -> pure (typeOfTyvar (var (tyVarVar a)))
-            (Nothing, Just e) -> pure e
-            (Just _, Just _) ->
-                failT ("Type variable " ++ prettyS a ++ " bound in type env and type-exp env. " ++
-                       "\nType env: " ++ show tenv ++
-                       "\nType exp env: " ++ show expEnv)
-            (Nothing, Nothing) ->
-                failT ("Unbound type variable " ++ prettyS a)
-      G.TyNamed t [] ->
-        pure $ TL.ExpConstr (constrForTyName t)
-      G.TyNamed t sigmas -> do
-        e <- transTypes te ee sigmas
-        pure $ TL.expApp (TL.ExpConstr (constrForTyName t)) e
+  case tau of
+    G.TyVar a ->
+      case (Map.lookup a tenv, Map.lookup a expEnv) of
+        (Just _, Nothing) -> pure (typeOfTyvar (var (tyVarVar a)))
+        (Nothing, Just e) -> pure e
+        (Just _, Just _) ->
+          failT
+            ( "Type variable "
+                ++ prettyS a
+                ++ " bound in type env and type-exp env. "
+                ++ "\nType env: "
+                ++ show tenv
+                ++ "\nType exp env: "
+                ++ show expEnv
+            )
+        (Nothing, Nothing) ->
+          failT ("Unbound type variable " ++ prettyS a)
+    G.TyNamed t [] ->
+      pure $ TL.ExpConstr (constrForTyName t)
+    G.TyNamed t sigmas -> do
+      e <- transTypes te ee sigmas
+      pure $ TL.expApp (TL.ExpConstr (constrForTyName t)) e
 
 -- \Delta,\mathcal T |- \overline{\tau} ~> E
 transTypes :: TyEnv -> TyExpEnv -> [G.Type] -> T TL.Exp
@@ -168,18 +182,25 @@ transTypeStar tenv tau = transTypeStar' tenv emptyTyExpEnv tau
 
 transTypeStar' :: TyEnv -> TyExpEnv -> G.Type -> T TL.Exp
 transTypeStar' tenv tyExpEnv tau =
-  withCtx ("transTypeStar' " ++ show tau ++
-           ", tenv=" ++ show tenv ++ ", tyExpEnv=" ++ show tyExpEnv) $ do
-  k <- classifyTy tau
-  case k of
-    TyKindBuiltin _ -> transType' tenv tyExpEnv tau
-    TyKindStruct _ _ -> transType' tenv tyExpEnv tau
-    TyKindTyVar _ -> transType' tenv tyExpEnv tau
-    TyKindIface t args -> do
-      iface <- lookupIface t
-      eta <- inst (if_formals iface) args
-      es <- forM (if_methods iface) $ \spec -> transMethodSpec tenv tyExpEnv (G.applyTySubst eta spec)
-      pure (mkSigList es)
+  withCtx
+    ( "transTypeStar' "
+        ++ show tau
+        ++ ", tenv="
+        ++ show tenv
+        ++ ", tyExpEnv="
+        ++ show tyExpEnv
+    )
+    $ do
+      k <- classifyTy tau
+      case k of
+        TyKindBuiltin _ -> transType' tenv tyExpEnv tau
+        TyKindStruct _ _ -> transType' tenv tyExpEnv tau
+        TyKindTyVar _ -> transType' tenv tyExpEnv tau
+        TyKindIface t args -> do
+          iface <- lookupIface t
+          eta <- inst (if_formals iface) args
+          es <- forM (if_methods iface) $ \spec -> transMethodSpec tenv tyExpEnv (G.applyTySubst eta spec)
+          pure (mkSigList es)
 
 freshMethodSig :: G.MeSig -> T G.MeSig
 freshMethodSig sig = do
@@ -187,12 +208,10 @@ freshMethodSig sig = do
   fresh <- freshTyVars (length origVars)
   let tyvarMap = Map.fromList (zip origVars fresh)
   pure $ everywhere (mkT (rewriteTyVar tyvarMap)) sig
-  where
-    rewriteTyVar :: Map.Map G.TyVarName G.TyVarName -> G.TyVarName -> G.TyVarName
-    rewriteTyVar m v =
-      case Map.lookup v m of
-        Just x -> x
-        Nothing -> v
+ where
+  rewriteTyVar :: Map.Map G.TyVarName G.TyVarName -> G.TyVarName -> G.TyVarName
+  rewriteTyVar m v =
+    fromMaybe v (Map.lookup v m)
 
 -- \Delta |-_{sig} M ~> E
 transMethodSig :: TyEnv -> TyExpEnv -> G.MeSig -> T TL.Exp
@@ -200,8 +219,9 @@ transMethodSig tenv initExpEnv sigOrig = withCtx ("transMethodSig " ++ show sigO
   sig <- freshMethodSig sigOrig
   let G.TyFormals formals = G.msig_tyArgs sig
   expEnv <-
-    extendTyExpEnv initExpEnv
-      (zipWith (\(a, _) i -> (a, TL.ExpConstr (constrI i))) formals [1..])
+    extendTyExpEnv
+      initExpEnv
+      (zipWith (\(a, _) i -> (a, TL.ExpConstr (constrI i))) formals [1 ..])
   e <- transTypes tenv expEnv (map (maybeType . snd) formals)
   e' <- transTypes tenv expEnv (map snd (G.msig_args sig) ++ [G.msig_res sig])
   pure (TL.mkTuple [e, e'])
@@ -219,41 +239,47 @@ transMethodSpec tenv tyExpEnv spec = withCtx ("transMethodSpec " ++ show spec) $
 -- \Delta |-subst \Phi |-> \phi ~> E
 tryInst :: TyEnv -> G.TyFormals -> [G.Type] -> T (Either String (G.TySubst, TL.Exp))
 tryInst tyEnv (G.TyFormals formals) sigmas
-    | length formals /= length sigmas = pure (Left "arity mismatch")
-    | otherwise = do
-        let subst = Map.fromList (zipWith (\(a, _) sigma -> (a, sigma)) formals sigmas)
-            taus = map (maybeType . snd) formals
-        eisM <-
-            catchT
-                (flip mapM (zip sigmas taus) $ \(sigma, tau) ->
-                 dictCons tyEnv sigma (G.applyTySubst subst tau))
-        case eisM of
-          Left e -> pure (Left ("bound mismatch: " ++ e))
-          Right eis'' -> do
-            eis <- mapM (transType tyEnv) sigmas
-            eis' <- mapM (transTypeStar tyEnv) sigmas
-            let triples = map (\(e, e', e'') -> TL.mkTriple e e' e'') (zip3 eis eis' eis'')
-            pure (Right (subst, TL.mkTuple triples))
+  | length formals /= length sigmas = pure (Left "arity mismatch")
+  | otherwise = do
+      let subst = Map.fromList (zipWith (\(a, _) sigma -> (a, sigma)) formals sigmas)
+          taus = map (maybeType . snd) formals
+      eisM <-
+        catchT
+          ( forM (zip sigmas taus) $ \(sigma, tau) ->
+              dictCons tyEnv sigma (G.applyTySubst subst tau)
+          )
+      case eisM of
+        Left e -> pure (Left ("bound mismatch: " ++ (te_message e)))
+        Right eis'' -> do
+          eis <- mapM (transType tyEnv) sigmas
+          eis' <- mapM (transTypeStar tyEnv) sigmas
+          let triples = map (\(e, e', e'') -> TL.mkTriple e e' e'') (zip3 eis eis' eis'')
+          pure (Right (subst, TL.mkTuple triples))
 
-instMeSigOrFail ::
-  (String -> String) -> TyEnv -> G.MeSig -> [G.Type] -> T ([G.Type], G.Type, TL.Exp)
+instMeSigOrFail
+  :: (String -> String) -> TyEnv -> G.MeSig -> [G.Type] -> T ([G.Type], G.Type, TL.Exp)
 instMeSigOrFail errMsg tyEnv sig actuals = do
   mSubst <- tryInst tyEnv (G.msig_tyArgs sig) actuals
   case mSubst of
     Left x -> failT (errMsg x)
     Right (subst, e) ->
-      pure ( G.applyTySubst subst (map snd (G.msig_args sig))
-           , G.applyTySubst subst (G.msig_res sig)
-           , e)
+      pure
+        ( G.applyTySubst subst (map snd (G.msig_args sig))
+        , G.applyTySubst subst (G.msig_res sig)
+        , e
+        )
 
 inst :: G.TyFormals -> [G.Type] -> T G.TySubst
 inst (G.TyFormals formals) sigmas
-    | length formals /= length sigmas =
-        failT $
-          "Cannot instantiate " ++ prettyS formals ++ " with " ++ prettyS sigmas ++
-          ": mismatch in number of arguments"
-    | otherwise =
-        pure $ Map.fromList (zipWith (\(a, _) sigma -> (a, sigma)) formals sigmas)
+  | length formals /= length sigmas =
+      failT $
+        "Cannot instantiate "
+          ++ prettyS formals
+          ++ " with "
+          ++ prettyS sigmas
+          ++ ": mismatch in number of arguments"
+  | otherwise =
+      pure $ Map.fromList (zipWith (\(a, _) sigma -> (a, sigma)) formals sigmas)
 
 data MatchType
   = TypeEq
@@ -267,19 +293,19 @@ matchTypes tau sigma =
       | t1 == t2 -> matchLists args1 args2
       | otherwise -> TypeNotEq
     (G.TyVar _, _) -> TypeUnifiable
-    (_, G.TyVar _)  -> TypeUnifiable
-  where
-    matchLists ts1 ts2
-      | length ts1 /= length ts2 = TypeNotEq
-      | otherwise =
-          let res = map (\(x, y) -> matchTypes x y) (zip ts1 ts2)
-          in foldl combine TypeEq res
-    combine TypeEq TypeEq = TypeEq
-    combine TypeNotEq _ = TypeNotEq
-    combine _ TypeNotEq = TypeNotEq
-    combine TypeUnifiable TypeEq = TypeUnifiable
-    combine TypeEq TypeUnifiable = TypeUnifiable
-    combine TypeUnifiable TypeUnifiable = TypeUnifiable
+    (_, G.TyVar _) -> TypeUnifiable
+ where
+  matchLists ts1 ts2
+    | length ts1 /= length ts2 = TypeNotEq
+    | otherwise =
+        let res = zipWith (\x y -> matchTypes x y) ts1 ts2
+         in foldl combine TypeEq res
+  combine TypeEq TypeEq = TypeEq
+  combine TypeNotEq _ = TypeNotEq
+  combine _ TypeNotEq = TypeNotEq
+  combine TypeUnifiable TypeEq = TypeUnifiable
+  combine TypeEq TypeUnifiable = TypeUnifiable
+  combine TypeUnifiable TypeUnifiable = TypeUnifiable
 
 --
 -- Dictionary construction
@@ -290,8 +316,14 @@ dictCons :: TyEnv -> G.Type -> G.Type -> T TL.Exp
 dictCons tenv tau sigma =
   withCtx ("dictCons " ++ prettyS tau ++ " <: " ++ prettyS sigma) $ do
     e <- dictCons' tenv tau sigma
-    traceD (text "dictCons " <> pretty tau <> text " <: " <> pretty sigma <> " ~> " <>
-            align (pretty e))
+    traceD
+      ( text "dictCons "
+          <> pretty tau
+          <> text " <: "
+          <> pretty sigma
+          <> " ~> "
+          <> align (pretty e)
+      )
     pure e
 
 dictCons' :: TyEnv -> G.Type -> G.Type -> T TL.Exp
@@ -303,8 +335,10 @@ dictCons' tenv (G.TyVar a) tau = do
   x <- freshVar
   sigma <- lookupTyVar a tenv
   e <- dictCons tenv sigma tau
-  pure $ TL.expAbs (TL.PatVar x)
-           (TL.expApp e (TL.expApp (boundFunOfTyvar (var (tyVarVar a))) (var x)))
+  pure $
+    TL.expAbs
+      (TL.PatVar x)
+      (TL.expApp e (TL.expApp (boundFunOfTyvar (var (tyVarVar a))) (var x)))
 dictCons' tenv tau1@(G.TyNamed t1 args1) tau2@(G.TyNamed t2 args2) = do
   unlessM (isIface t2) $ failT (prettyS tau1 ++ " is not a subtype of " ++ prettyS tau2)
   k <- classifyTyName t1
@@ -327,7 +361,7 @@ dictCons' tenv tau1@(G.TyNamed t1 args1) tau2@(G.TyNamed t2 args2) = do
           Nothing -> failT (prettyS tau1 ++ " is not a subtype of " ++ prettyS tau2)
       pure $
         TL.expAbs (TL.tuplePat [TL.PatWild, TL.PatVar y, matchDictList (map TL.PatVar xs)]) $
-        TL.mkTuple [e, var y, mkDictList dictEntries]
+          TL.mkTuple [e, var y, mkDictList dictEntries]
 dictCons' _ tau1 tau2 = failT (prettyS tau1 ++ " is not a subtype of " ++ prettyS tau2)
 
 dictConsStructBuiltin :: TyEnv -> G.Type -> G.Type -> T TL.Exp
@@ -339,21 +373,31 @@ dictConsStructBuiltin tenv tau1@(G.TyNamed t1 _args1) tau2@(G.TyNamed t2 args2) 
   eta <- inst (if_formals iface) args2
   methodMap <- methodsStructOrBuiltin tenv tau1
   dictEntries <-
-      forM (map (G.applyTySubst eta) (if_methods iface)) $ \wantedSpec ->
+    forM (map (G.applyTySubst eta) (if_methods iface)) $ \wantedSpec ->
       case Map.lookup (G.ms_name wantedSpec) methodMap of
         Just (haveSpec, e)
           | haveSpec == wantedSpec -> do
-            let y = methodVar (G.ms_name wantedSpec) t1
-            pure (TL.expApp (var y) e)
+              let y = methodVar (G.ms_name wantedSpec) t1
+              pure (TL.expApp (var y) e)
         _ -> do
-          failT (prettyS tau1 ++ " is not a subtype of " ++ prettyS tau2 ++
-                 " (method ``" ++ prettyS wantedSpec ++
-                 "'' not implemented, available methods: "
-                 ++ prettyS (Map.toList methodMap) ++ ")")
+          failT
+            ( prettyS tau1
+                ++ " is not a subtype of "
+                ++ prettyS tau2
+                ++ " (method ``"
+                ++ prettyS wantedSpec
+                ++ "'' not implemented, available methods: "
+                ++ prettyS (Map.toList methodMap)
+                ++ ")"
+            )
   pure $ TL.expAbs (TL.PatVar x) $ TL.mkTuple [e, var x, mkDictList dictEntries]
 dictConsStructBuiltin _tenv tau1 tau2 =
-  failT ("BUG: called dictConsStructBuiltin with invalid arguments tau1=" ++ prettyS tau1 ++
-         ", tau2=" ++ prettyS tau2)
+  failT
+    ( "BUG: called dictConsStructBuiltin with invalid arguments tau1="
+        ++ prettyS tau1
+        ++ ", tau2="
+        ++ prettyS tau2
+    )
 
 tryDictCons :: TyEnv -> G.Type -> G.Type -> T (Maybe TL.Exp)
 tryDictCons tyEnv tau sigma = do
@@ -371,8 +415,14 @@ dictDestr :: TyEnv -> G.Type -> G.Type -> T TL.Exp
 dictDestr tenv tau sigma =
   withCtx ("dictDestr " ++ prettyS tau ++ " \\ " ++ prettyS sigma) $ do
     e <- dictDestr' tenv tau sigma
-    traceD (text "dictDestr " <> pretty tau <> text " \\ " <> pretty sigma <> " ~> " <>
-            align (pretty e))
+    traceD
+      ( text "dictDestr "
+          <> pretty tau
+          <> text " \\ "
+          <> pretty sigma
+          <> " ~> "
+          <> align (pretty e)
+      )
     pure e
 
 dictDestr' :: TyEnv -> G.Type -> G.Type -> T TL.Exp
@@ -386,66 +436,101 @@ dictDestr' tenv tau sigma = do
   case (kindTau, kindSigma) of
     (TyKindBuiltin _, TyKindBuiltin _) ->
       -- equality already handled
-      failT ("Type assertion from " ++ prettyS tau ++ " to " ++ prettyS sigma ++
-              " is guaranteed to fail at runtime")
+      failT
+        ( "Type assertion from "
+            ++ prettyS tau
+            ++ " to "
+            ++ prettyS sigma
+            ++ " is guaranteed to fail at runtime"
+        )
     (TyKindIface _ _, TyKindStruct _ _) -> do
       traceD (text "TD-DESTR-IFACE-STRUCT" <+> pretty tau <+> text "\\" <+> pretty sigma)
       x <- freshVar
       y <- freshVar
       e <- transType tenv sigma
-      pure (TL.expAbs (TL.PatVar x) $
-            TL.ExpCase (var x)
-             [TL.PatClause
-               (TL.tuplePat [TL.PatWild, TL.PatVar y, TL.PatWild])
-               (TL.matchEq e (TL.fstOfPair (var y)) (var y)
-                "Cannot cast value ~a to struct type ~a with runtime type ~a"
-                [var x, TL.ExpStr (prettyT sigma), e])])
+      pure
+        ( TL.expAbs (TL.PatVar x) $
+            TL.ExpCase
+              (var x)
+              [ TL.PatClause
+                  (TL.tuplePat [TL.PatWild, TL.PatVar y, TL.PatWild])
+                  ( TL.matchEq
+                      e
+                      (TL.fstOfPair (var y))
+                      (var y)
+                      "Cannot cast value ~a to struct type ~a with runtime type ~a"
+                      [var x, TL.ExpStr (prettyT sigma), e]
+                  )
+              ]
+        )
     (TyKindIface _ _, TyKindIface _ _) -> do
       traceD (text "TD-DESTR-IFACE-IFACE" <+> pretty tau <+> text "\\" <+> pretty sigma)
       e <- transTypeStar tenv sigma
       y <- freshVar
-      pure $ TL.expAbs (TL.tuplePat [TL.PatWild, TL.PatVar y, TL.PatWild])
+      pure $
+        TL.expAbs
+          (TL.tuplePat [TL.PatWild, TL.PatVar y, TL.PatWild])
           (TL.expApp (var dynAssertName) (TL.mkPair (var y) e))
     (TyKindIface _ _, TyKindTyVar a) -> do
       traceD (text "TD-DESTR-IFACE-TYVAR" <+> pretty tau <+> text "\\" <+> pretty sigma)
       let xa = tyVarVar a
       y <- freshVar
-      pure $ TL.expAbs (TL.tuplePat [TL.PatWild, TL.PatVar y, TL.PatWild]) $
-        TL.matchEqFull (typeOfTyvar (var xa)) (TL.fstOfPair (var y))
-          (var y) -- True
-          (TL.expApp (var dynAssertName) (TL.mkPair (var y) (typeStarOfTyvar (var xa)))) -- False
+      pure $
+        TL.expAbs (TL.tuplePat [TL.PatWild, TL.PatVar y, TL.PatWild]) $
+          TL.matchEqFull
+            (typeOfTyvar (var xa))
+            (TL.fstOfPair (var y))
+            (var y) -- True
+            (TL.expApp (var dynAssertName) (TL.mkPair (var y) (typeStarOfTyvar (var xa)))) -- False
     (TyKindTyVar a, _) -> do
       traceD (text "TD-DESTR-TYVAR" <+> pretty tau <+> text "\\" <+> pretty sigma)
       tau' <- lookupTyVar a tenv
       e <- dictDestr tenv tau' sigma
       x <- freshVar
-      pure $ TL.expAbs (TL.PatVar x) $
-        TL.expApp e (TL.expApp (boundFunOfTyvar (var (tyVarVar a))) (var x))
+      pure $
+        TL.expAbs (TL.PatVar x) $
+          TL.expApp e (TL.expApp (boundFunOfTyvar (var (tyVarVar a))) (var x))
     (TyKindStruct _ _, TyKindStruct _ _) -> do
       traceD (text "TD-DESTR-STRUCT-STRUCT" <+> pretty tau <+> text "\\" <+> pretty sigma)
       y <- freshVar
       e <- transType tenv sigma
-      pure $ TL.expAbs (TL.PatVar y)
-               (TL.matchEq e (TL.fstOfPair (var y)) (var y)
-                  "Cannot cast value ~a to struct type ~a with runtime type ~a"
-                  [var y, TL.ExpStr (prettyT sigma), e])
+      pure $
+        TL.expAbs
+          (TL.PatVar y)
+          ( TL.matchEq
+              e
+              (TL.fstOfPair (var y))
+              (var y)
+              "Cannot cast value ~a to struct type ~a with runtime type ~a"
+              [var y, TL.ExpStr (prettyT sigma), e]
+          )
     (TyKindStruct _ _, TyKindIface _ _) -> do
       traceD (text "TD-DESTR-STRUCT-IFACE" <+> pretty tau <+> text "\\" <+> pretty sigma)
       y <- freshVar
       e <- transTypeStar tenv sigma
-      pure $ TL.expAbs (TL.PatVar y)
+      pure $
+        TL.expAbs
+          (TL.PatVar y)
           (TL.expApp (var dynAssertName) (TL.mkPair (var y) e))
     (TyKindStruct _ _, TyKindTyVar a) -> do
       traceD (text "TD-DESTR-STRUCT-TYVAR" <+> pretty tau <+> text "\\" <+> pretty sigma)
       let xa = tyVarVar a
       y <- freshVar
-      pure $ TL.expAbs (TL.PatVar y) $
-        TL.matchEqFull (typeOfTyvar (var xa)) (TL.fstOfPair (var y))
-          (var y) -- True
-          (TL.expApp (var dynAssertName) (TL.mkPair (var y) (TL.sndOfPair (var xa)))) -- False
+      pure $
+        TL.expAbs (TL.PatVar y) $
+          TL.matchEqFull
+            (typeOfTyvar (var xa))
+            (TL.fstOfPair (var y))
+            (var y) -- True
+            (TL.expApp (var dynAssertName) (TL.mkPair (var y) (TL.sndOfPair (var xa)))) -- False
     _ ->
-      failT ("Type assertion from " ++ prettyS tau ++ " to " ++ prettyS sigma ++
-             " is guaranteed to fail at runtime")
+      failT
+        ( "Type assertion from "
+            ++ prettyS tau
+            ++ " to "
+            ++ prettyS sigma
+            ++ " is guaranteed to fail at runtime"
+        )
 
 --
 -- Subtyping
@@ -486,9 +571,10 @@ transExpSub tyEnv varEnv e sigma = do
 
 transExp :: TyEnv -> VarEnv -> G.Exp -> T (G.Type, TL.Exp)
 transExp tenv venv e = withCtx ("Expression " ++ prettyS e) $
-  do res@(tau, resE) <- transExp' tenv venv e
-     traceD (text "transExp " <> pretty e <> " : " <> pretty tau <> " ~> " <> align (pretty resE))
-     pure res
+  do
+    res@(tau, resE) <- transExp' tenv venv e
+    traceD (text "transExp " <> pretty e <> " : " <> pretty tau <> " ~> " <> align (pretty resE))
+    pure res
 
 transExp' :: TyEnv -> VarEnv -> G.Exp -> T (G.Type, TL.Exp)
 transExp' _tyEnv varEnv (G.Var x) = do
@@ -529,23 +615,27 @@ transExp' tyEnv varEnv (G.Select e f) = do
         Just ((_, sigma), x) -> do
           let resultTy = G.applyTySubst eta sigma
               resultExp =
-                TL.ExpCase eT
-                  [TL.PatClause (TL.tuplePat [TL.PatWild, TL.tuplePat (map TL.PatVar xs)])
-                                (var x)]
+                TL.ExpCase
+                  eT
+                  [ TL.PatClause
+                      (TL.tuplePat [TL.PatWild, TL.tuplePat (map TL.PatVar xs)])
+                      (var x)
+                  ]
           pure (resultTy, resultExp)
     _ -> failT ("Cannot access field " ++ prettyS f ++ " from non-struct type " ++ prettyS tau)
-transExp' tyEnv varEnv (G.MeCall (G.Var (G.VarName "fmt")) (G.MeName me) [] (fmt:args))
+transExp' tyEnv varEnv (G.MeCall (G.Var (G.VarName "fmt")) (G.MeName me) [] (fmt : args))
   | me `elem` ["Printf", "Sprintf"] = do
-  (_tau, fmtT) <- transExp tyEnv varEnv fmt
-  fmt <-
-    case fmtT of
-      TL.ExpStr text -> pure text
-      _ -> failT (T.unpack me ++ " requires string literal as first argument, not " ++ prettyS fmtT)
-  argsT <- mapM (\e -> transExp tyEnv varEnv e >>= \(_, t) -> pure t) args
-  if me == "Printf"
-    then pure (tyBuiltinToType TyVoid, TL.printString fmt argsT)
-    else pure (tyBuiltinToType TyString, TL.toString fmt argsT)
+      (_tau, fmtT) <- transExp tyEnv varEnv fmt
+      fmt <-
+        case fmtT of
+          TL.ExpStr text -> pure text
+          _ -> failT (T.unpack me ++ " requires string literal as first argument, not " ++ prettyS fmtT)
+      argsT <- mapM (transExp tyEnv varEnv >=> (\(_, t) -> pure t)) args
+      if me == "Printf"
+        then pure (tyBuiltinToType TyVoid, TL.printString fmt argsT)
+        else pure (tyBuiltinToType TyString, TL.toString fmt argsT)
 transExp' tyEnv varEnv (G.MeCall recvExp m actuals args) = do
+  assertTypesOk tyEnv actuals
   (tau, eT) <- transExp tyEnv varEnv recvExp
   k <- classifyTy tau
   case k of
@@ -560,7 +650,10 @@ transExp' tyEnv varEnv (G.MeCall recvExp m actuals args) = do
       -- TD-CALL-TYVAR
       bound <- lookupTyVar a tyEnv
       callOnIface
-        tyEnv varEnv m actuals
+        tyEnv
+        varEnv
+        m
+        actuals
         (tau, bound)
         (TL.expApp (boundFunOfTyvar (var (tyVarVar a))) eT)
         args
@@ -578,26 +671,54 @@ transExp' tyEnv varEnv assertE@(G.TyAssert exp tau) = do
       -- useful.
       case matchTypes tau sigma of
         TypeEq ->
-          failT ("Assertion " ++ prettyS assertE ++ " is not necessary because " ++ prettyS exp
-                 ++ " already has type " ++ prettyS tau)
+          failT
+            ( "Assertion "
+                ++ prettyS assertE
+                ++ " is not necessary because "
+                ++ prettyS exp
+                ++ " already has type "
+                ++ prettyS tau
+            )
         TypeNotEq ->
-          failT ("Assertion " ++ prettyS assertE ++
-                 " will definitely fail at runtime because " ++ prettyS exp ++
-                 " has static type " ++ prettyS sigma ++
-                 ", which is a struct type different from the struct type " ++ prettyS tau)
+          failT
+            ( "Assertion "
+                ++ prettyS assertE
+                ++ " will definitely fail at runtime because "
+                ++ prettyS exp
+                ++ " has static type "
+                ++ prettyS sigma
+                ++ ", which is a struct type different from the struct type "
+                ++ prettyS tau
+            )
         TypeUnifiable -> pure ()
     (TyKindLikeStruct, TyKindLikeIface) -> do
       sigmaBound <- bound tyEnv sigma
       b <- isSubType tyEnv tau sigmaBound
       if b || not (Set.null (G.freeTyVars sigma))
         then pure () -- T-ASSERT_S from the FGG paper
-        else failT ("Assertion " ++ prettyS assertE ++ " will definitely fail at runtime because " ++
-                    prettyS exp ++ " has static type " ++ prettyS sigma ++ " and " ++
-                    prettyS tau ++ " is not a subtype of the bound of this static type")
+        else
+          failT
+            ( "Assertion "
+                ++ prettyS assertE
+                ++ " will definitely fail at runtime because "
+                ++ prettyS exp
+                ++ " has static type "
+                ++ prettyS sigma
+                ++ " and "
+                ++ prettyS tau
+                ++ " is not a subtype of the bound of this static type"
+            )
     (TyKindLikeStruct, TyKindLikeBuiltin) ->
-      failT ("Assertion " ++ prettyS assertE ++ " will definitely fail at runtime because " ++
-              prettyS exp ++ " has static type " ++ prettyS sigma ++
-              " and this builtin type cannot be casted to struct type " ++ prettyS tau)
+      failT
+        ( "Assertion "
+            ++ prettyS assertE
+            ++ " will definitely fail at runtime because "
+            ++ prettyS exp
+            ++ " has static type "
+            ++ prettyS sigma
+            ++ " and this builtin type cannot be casted to struct type "
+            ++ prettyS tau
+        )
     (TyKindLikeIface, TyKindLikeIface) ->
       pure () -- T-ASSERT_I from the FGG paper
     (TyKindLikeIface, _) ->
@@ -605,16 +726,31 @@ transExp' tyEnv varEnv assertE@(G.TyAssert exp tau) = do
         TyKindIface _ _ -> do
           b <- isSubType tyEnv sigma tau
           if b
-            then failT ("Assertion " ++ prettyS assertE ++ " is unnecessary because " ++
-                        prettyS exp ++ " has static type " ++ prettyS sigma ++
-                        " and this type is a subtype of " ++ prettyS tau)
-           else
-             if (Set.null (G.freeTyVars sigma))
-               then failT ("Assertion " ++ prettyS assertE ++
-                           " will definitely fail at runtime because " ++
-                           prettyS exp ++ " has static type " ++ prettyS sigma ++
-                           " and this type is not a subtype of " ++ prettyS tau)
-               else pure ()
+            then
+              failT
+                ( "Assertion "
+                    ++ prettyS assertE
+                    ++ " is unnecessary because "
+                    ++ prettyS exp
+                    ++ " has static type "
+                    ++ prettyS sigma
+                    ++ " and this type is a subtype of "
+                    ++ prettyS tau
+                )
+            else
+              if Set.null (G.freeTyVars sigma)
+                then
+                  failT
+                    ( "Assertion "
+                        ++ prettyS assertE
+                        ++ " will definitely fail at runtime because "
+                        ++ prettyS exp
+                        ++ " has static type "
+                        ++ prettyS sigma
+                        ++ " and this type is not a subtype of "
+                        ++ prettyS tau
+                    )
+                else pure ()
         TyKindTyVar a -> do
           -- not allowed in FGG: we have a cast exp.(alpha) where
           -- alpha is a type variable and exp has type sigma such that
@@ -625,13 +761,22 @@ transExp' tyEnv varEnv assertE@(G.TyAssert exp tau) = do
           b <- isSubType tyEnv sigma aBound
           if b
             then pure () -- a is possibly sigma at runtime
-            else do      -- a cannot be instantiated with sigma
-              failT ("Assertion " ++ prettyS assertE ++
-                      " will definitely fail at runtime because " ++
-                      prettyS exp ++ " has static type sigma = " ++ prettyS sigma ++
-                      " but type variable " ++ prettyS a ++
-                      " cannot be instantiated with sigma because sigma is not a subtype of "
-                      ++ prettyS aBound ++ ", the bound of " ++ prettyS a)
+            else do
+              -- a cannot be instantiated with sigma
+              failT
+                ( "Assertion "
+                    ++ prettyS assertE
+                    ++ " will definitely fail at runtime because "
+                    ++ prettyS exp
+                    ++ " has static type sigma = "
+                    ++ prettyS sigma
+                    ++ " but type variable "
+                    ++ prettyS a
+                    ++ " cannot be instantiated with sigma because sigma is not a subtype of "
+                    ++ prettyS aBound
+                    ++ ", the bound of "
+                    ++ prettyS a
+                )
         _ -> failT ("BUG: impossible kind " ++ show kTau)
     (TyKindLikeBuiltin, _) ->
       failT ("Type assertion to builtin type " ++ prettyS tau ++ " not supported")
@@ -641,13 +786,24 @@ transExp' tyEnv varEnv (G.FunCall f actuals args) = do
   sig <- lookupFun f
   (argTypes, resType, e) <-
     instMeSigOrFail
-      (\detail ->
-         "Cannot instantiate function " ++ prettyS f ++ " with type arguments " ++ prettyS actuals
-         ++ ": " ++ detail)
-      tyEnv sig actuals
+      ( \detail ->
+          "Cannot instantiate function "
+            ++ prettyS f
+            ++ " with type arguments "
+            ++ prettyS actuals
+            ++ ": "
+            ++ detail
+      )
+      tyEnv
+      sig
+      actuals
   es <-
-    checkArgTypes ("Invalid number of arguments for function " ++ prettyS f)
-      tyEnv varEnv argTypes args
+    checkArgTypes
+      ("Invalid number of arguments for function " ++ prettyS f)
+      tyEnv
+      varEnv
+      argTypes
+      args
   let resExp = TL.expAppMany (var (funVar f)) e [TL.mkTuple es]
   pure (resType, resExp)
 transExp' tyEnv varEnv (G.BinOp op exp1 exp2) = do
@@ -659,8 +815,12 @@ transExp' tyEnv varEnv (G.BinOp op exp1 exp2) = do
         Just resTy -> pure (resTy, TL.ExpBinOp e1 op e2)
         Nothing ->
           failT $
-            "Invalid types for binary operator " ++ prettyS op ++ ": " ++ prettyS tau1 ++
-            ", " ++ prettyS tau2
+            "Invalid types for binary operator "
+              ++ prettyS op
+              ++ ": "
+              ++ prettyS tau1
+              ++ ", "
+              ++ prettyS tau2
     Nothing ->
       failT ("BUG: Unknown binary operator: " ++ show op)
 transExp' tyEnv varEnv (G.UnOp op exp) = do
@@ -687,8 +847,10 @@ transExp' tyEnv varEnv (G.Cond exp1 exp2 exp3) = do
       case (mE2to3, mE3to2) of
         (Nothing, Nothing) ->
           failT $
-            "Incompatible types for branches of conditional: " ++
-            prettyS tau2 ++ ", " ++ prettyS tau3
+            "Incompatible types for branches of conditional: "
+              ++ prettyS tau2
+              ++ ", "
+              ++ prettyS tau3
         (Just e2to3, _) ->
           -- tau2 <: tau3
           pure (tau3, TL.ExpCond e1 (TL.expApp e2to3 e2) e3)
@@ -700,15 +862,16 @@ transExp' _tyEnv _varEnv (G.StrLit s) = pure (tyBuiltinToType TyString, TL.ExpSt
 transExp' _tyEnv _varEnv (G.CharLit c) = pure (tyBuiltinToType TyRune, TL.ExpChar c)
 transExp' _tyEnv _varEnv (G.BoolLit b) = pure (tyBuiltinToType TyBool, TL.ExpBool b)
 
-callOnStructOrBuiltin :: TyEnv
-                      -> VarEnv
-                      -> G.MeName
-                      -> G.TyName
-                      -> G.Type
-                      -> TL.Exp
-                      -> [G.Type]
-                      -> [G.Exp]
-                      -> T (G.Type, TL.Exp)
+callOnStructOrBuiltin
+  :: TyEnv
+  -> VarEnv
+  -> G.MeName
+  -> G.TyName
+  -> G.Type
+  -> TL.Exp
+  -> [G.Type]
+  -> [G.Exp]
+  -> T (G.Type, TL.Exp)
 callOnStructOrBuiltin tyEnv varEnv m tyName tau eT actuals args = do
   -- TD-CALL-STRUCT
   methodMap <- methodsStructOrBuiltin tyEnv tau
@@ -717,28 +880,45 @@ callOnStructOrBuiltin tyEnv varEnv m tyName tau eT actuals args = do
     Just (spec, e') -> do
       (argTypes, resType, e'') <-
         instMeSigOrFail
-          (\detail ->
-            "Cannot instantiate method " ++ prettyS m ++ " for struct " ++ prettyS tau
-             ++ " with type arguments " ++ prettyS actuals ++ ": " ++ detail)
-          tyEnv (G.ms_sig spec) actuals
+          ( \detail ->
+              "Cannot instantiate method "
+                ++ prettyS m
+                ++ " for struct "
+                ++ prettyS tau
+                ++ " with type arguments "
+                ++ prettyS actuals
+                ++ ": "
+                ++ detail
+          )
+          tyEnv
+          (G.ms_sig spec)
+          actuals
       es <-
         checkArgTypes
-          ("Invalid number of arguments for method " ++ prettyS m ++ " of struct "
-           ++ prettyS tau)
-          tyEnv varEnv argTypes args
+          ( "Invalid number of arguments for method "
+              ++ prettyS m
+              ++ " of struct "
+              ++ prettyS tau
+          )
+          tyEnv
+          varEnv
+          argTypes
+          args
       let resExp =
-            TL.expAppMany (var (methodVar m tyName))
-              e' [eT, e'', TL.mkTuple es]
+            TL.expAppMany
+              (var (methodVar m tyName))
+              e'
+              [eT, e'', TL.mkTuple es]
       pure (resType, resExp)
 
-callOnIface ::
-  TyEnv
+callOnIface
+  :: TyEnv
   -> VarEnv
   -> G.MeName
-  -> [G.Type]           -- type args of method call
-  -> (G.Type, G.Type)   -- (receiver type, its bound)
-  -> TL.Exp             -- exp for extracting the dict
-  -> [G.Exp]            -- arguments
+  -> [G.Type] -- type args of method call
+  -> (G.Type, G.Type) -- (receiver type, its bound)
+  -> TL.Exp -- exp for extracting the dict
+  -> [G.Exp] -- arguments
   -> T (G.Type, TL.Exp)
 callOnIface tyEnv varEnv m actuals (recvTy, boundTy) dictE args = do
   mSpecs <- methods tyEnv boundTy
@@ -749,20 +929,37 @@ callOnIface tyEnv varEnv m actuals (recvTy, boundTy) dictE args = do
     Just (spec, x) -> do
       (argTypes, resType, e') <-
         instMeSigOrFail
-          (\detail ->
-             "Cannot instantiate method " ++ prettyS m ++ " for receiver type " ++ prettyS recvTy
-              ++ " with type arguments " ++ prettyS actuals ++ ": " ++ detail)
-          tyEnv (G.ms_sig spec) actuals
+          ( \detail ->
+              "Cannot instantiate method "
+                ++ prettyS m
+                ++ " for receiver type "
+                ++ prettyS recvTy
+                ++ " with type arguments "
+                ++ prettyS actuals
+                ++ ": "
+                ++ detail
+          )
+          tyEnv
+          (G.ms_sig spec)
+          actuals
       es <-
         checkArgTypes
-          ("Invalid number of arguments for method " ++ prettyS m ++ " of receiverType "
-           ++ prettyS recvTy)
-          tyEnv varEnv argTypes args
+          ( "Invalid number of arguments for method "
+              ++ prettyS m
+              ++ " of receiverType "
+              ++ prettyS recvTy
+          )
+          tyEnv
+          varEnv
+          argTypes
+          args
       let resExp =
-            TL.ExpCase dictE
-              [TL.PatClause
-                 (TL.tuplePat [TL.PatWild, TL.PatVar y, matchDictList (map TL.PatVar xs)])
-                 (TL.expAppMany (var x) (var y) [e', TL.mkTuple es])]
+            TL.ExpCase
+              dictE
+              [ TL.PatClause
+                  (TL.tuplePat [TL.PatWild, TL.PatVar y, matchDictList (map TL.PatVar xs)])
+                  (TL.expAppMany (var x) (var y) [e', TL.mkTuple es])
+              ]
       pure (resType, resExp)
 
 checkArgTypes :: String -> TyEnv -> VarEnv -> [G.Type] -> [G.Exp] -> T [TL.Exp]
@@ -819,8 +1016,7 @@ starTyName = "-star-ty"
 -- Translating declarations and programs
 --
 
-data TransDeclRes
-  = TransDeclRes
+data TransDeclRes = TransDeclRes
   { tdr_binding :: Maybe TL.Binding
   , tdr_implClause :: Maybe TL.PatClause
   , tdr_starTyClause :: Maybe TL.PatClause
@@ -829,25 +1025,32 @@ data TransDeclRes
 
 transDecl :: G.Decl -> T TransDeclRes
 transDecl decl =
-    case decl of
-      G.TypeDecl tyName formals tyLit -> withCtx ("declaration of " ++ prettyS tyName) $ do
-        -- T-TYPE from FGG paper
-        _ <- assertTyFormalsToTyEnv emptyTyFormals formals
-        assertTypeDeclOk formals tyLit
-        let n = length (G.unTyFormals formals)
-        xs <- freshVars n
-        tyExpEnv <- mkTyExpEnv (zipWith (\(a, _) x -> (a, var x)) (G.unTyFormals formals) xs)
-        tyExp <- transTypeStar' emptyTyEnv tyExpEnv
+  case decl of
+    G.TypeDecl tyName formals tyLit -> withCtx ("declaration of " ++ prettyS tyName) $ do
+      -- T-TYPE from FGG paper
+      _ <- assertTyFormalsToTyEnv emptyTyFormals formals
+      assertTypeDeclOk formals tyLit
+      let n = length (G.unTyFormals formals)
+      xs <- freshVars n
+      tyExpEnv <- mkTyExpEnv (zipWith (\(a, _) x -> (a, var x)) (G.unTyFormals formals) xs)
+      tyExp <-
+        transTypeStar'
+          emptyTyEnv
+          tyExpEnv
           (G.TyNamed tyName (map (G.TyVar . fst) (G.unTyFormals formals)))
-        let kt = constrForTyName tyName
-            patClause = TL.PatClause
-                          (TL.PatConstr kt
-                            (if n == 0 then [] else [TL.tuplePat (map TL.PatVar xs)]))
-                          tyExp
-        pure $ TransDeclRes Nothing Nothing (Just patClause)
-      G.MeDecl (x, t, tFormals)
-                 (G.MeSpec m sig@(G.MeSig mFormals args res))
-                 body ->
+      let kt = constrForTyName tyName
+          patClause =
+            TL.PatClause
+              ( TL.PatConstr
+                  kt
+                  (if n == 0 then [] else [TL.tuplePat (map TL.PatVar xs)])
+              )
+              tyExp
+      pure $ TransDeclRes Nothing Nothing (Just patClause)
+    G.MeDecl
+      (x, t, tFormals)
+      (G.MeSpec m sig@(G.MeSig mFormals args res))
+      body ->
         -- TD-METHOD
         withCtx ("declaration of method " ++ prettyS m ++ " for " ++ prettyS t) $ do
           k <- classifyTyName t
@@ -871,13 +1074,15 @@ transDecl decl =
               tX = varVar x
               xBetas = map tyVarVar betas
               tXs = map (varVar . fst) args
-              binding = TL.Binding
-                            tM
-                            [ TL.tuplePat (map TL.PatVar xAlphas)
-                            , TL.PatVar tX
-                            , TL.tuplePat (map TL.PatVar xBetas)
-                            , TL.tuplePat (map TL.PatVar tXs) ]
-                            tExp
+              binding =
+                TL.Binding
+                  tM
+                  [ TL.tuplePat (map TL.PatVar xAlphas)
+                  , TL.PatVar tX
+                  , TL.tuplePat (map TL.PatVar xBetas)
+                  , TL.tuplePat (map TL.PatVar tXs)
+                  ]
+                  tExp
           -- TD-METHOD-IMPL
           let n = length (G.unTyFormals tFormals)
           x <- freshVar
@@ -889,42 +1094,58 @@ transDecl decl =
             forM (zip (G.unTyFormals tFormals) xs) $ \((_, bound), xi) -> do
               let tau = maybeType bound
               ei' <- transTypeStar' emptyTyEnv tyExpEnv tau
-              pure (TL.mkTriple
-                     (var xi)
-                     (TL.expApp (var starTyName) (var xi))
-                     (TL.expAbs (TL.PatVar y)
-                       (TL.expApp (var dynAssertName)
-                         (TL.mkPair (TL.expApp (var unpackName) (var y)) ei')))
-                   )
+              pure
+                ( TL.mkTriple
+                    (var xi)
+                    (TL.expApp (var starTyName) (var xi))
+                    ( TL.expAbs
+                        (TL.PatVar y)
+                        ( TL.expApp
+                            (var dynAssertName)
+                            (TL.mkPair (TL.expApp (var unpackName) (var y)) ei')
+                        )
+                    )
+                )
           let kt = constrForTyName t
               km = constrForMeName m
-              patClause = TL.PatClause
-                              (TL.PatConstr
-                                TL.pairConstr
-                                [ TL.PatConstr kt
-                                    (if n == 0 then [] else [TL.tuplePat (map TL.PatVar xs)])
-                                , TL.PatConstr km [TL.PatVar x]])
-                              (TL.matchEq tSigExp (var x) (TL.expApp (var tM) (TL.mkTuple es))
-                               ("found implementation of method ~a for struct ~a with " <>
-                                "signature ~a  but this does not match required signature ~a")
-                               [TL.ExpConstr km, TL.ExpConstr kt, tSigExp, var x])
+              patClause =
+                TL.PatClause
+                  ( TL.PatConstr
+                      TL.pairConstr
+                      [ TL.PatConstr
+                          kt
+                          (if n == 0 then [] else [TL.tuplePat (map TL.PatVar xs)])
+                      , TL.PatConstr km [TL.PatVar x]
+                      ]
+                  )
+                  ( TL.matchEq
+                      tSigExp
+                      (var x)
+                      (TL.expApp (var tM) (TL.mkTuple es))
+                      ( "found implementation of method ~a for struct ~a with "
+                          <> "signature ~a  but this does not match required signature ~a"
+                      )
+                      [TL.ExpConstr km, TL.ExpConstr kt, tSigExp, var x]
+                  )
               res = TransDeclRes (Just binding) (Just patClause) Nothing
           pure res
-      G.FunDecl (G.MeSpec f (G.MeSig mFormals args res)) body ->
-        withCtx ("declaration of function " ++ prettyS f) $ do
-          tenv <- assertTyFormalsToTyEnv emptyTyFormals mFormals
-          assertTypesOk tenv (res : map snd args)
-          venv <- mkVarEnv args
-          tExp <- transMethodBody tenv venv body res
-          let betas = tyVarsFromFormals mFormals
-              xBetas = map tyVarVar betas
-              tXs = map (varVar . fst) args
-              binding = TL.Binding
-                            (funVar f)
-                            [ TL.tuplePat (map TL.PatVar xBetas)
-                            , TL.tuplePat (map TL.PatVar tXs) ]
-                            tExp
-          pure $ TransDeclRes (Just binding) Nothing Nothing
+    G.FunDecl (G.MeSpec f (G.MeSig mFormals args res)) body ->
+      withCtx ("declaration of function " ++ prettyS f) $ do
+        tenv <- assertTyFormalsToTyEnv emptyTyFormals mFormals
+        assertTypesOk tenv (res : map snd args)
+        venv <- mkVarEnv args
+        tExp <- transMethodBody tenv venv body res
+        let betas = tyVarsFromFormals mFormals
+            xBetas = map tyVarVar betas
+            tXs = map (varVar . fst) args
+            binding =
+              TL.Binding
+                (funVar f)
+                [ TL.tuplePat (map TL.PatVar xBetas)
+                , TL.tuplePat (map TL.PatVar tXs)
+                ]
+                tExp
+        pure $ TransDeclRes (Just binding) Nothing Nothing
 
 transMethodBody :: TyEnv -> VarEnv -> G.MeBody -> G.Type -> T TL.Exp
 transMethodBody tenv venv body resTy = withCtx "method/function body" $ do
@@ -934,21 +1155,21 @@ transMethodBody tenv venv body resTy = withCtx "method/function body" $ do
       Just mainExp -> transExpSub tenv varEnv mainExp resTy
       Nothing ->
         if G.isVoid resTy
-           then pure TL.ExpVoid
-           else failT ("Method/function returns nothing but return type is " ++ prettyS resTy)
+          then pure TL.ExpVoid
+          else failT ("Method/function returns nothing but return type is " ++ prettyS resTy)
   pure (cont returnE)
-  where
-    loop :: VarEnv -> (TL.Exp -> TL.Exp) -> [(G.VarName, Maybe G.Type, G.Exp)] -> T (VarEnv, TL.Exp -> TL.Exp)
-    loop varEnv cont [] = pure (varEnv, cont)
-    loop varEnv@(VarEnv m) cont ((x, mTy, exp) : rest) = do
-      (tau, translatedExp) <-
-        case mTy of
-          Nothing -> transExp emptyTyEnv varEnv exp
-          Just ty -> do
-            exp' <- transExpSub emptyTyEnv varEnv exp ty
-            pure (ty, exp')
-      let newCont e = cont $ TL.ExpCase translatedExp [TL.PatClause (TL.PatVar (varVar x)) e]
-      loop (VarEnv (Map.insert x tau m)) newCont rest
+ where
+  loop :: VarEnv -> (TL.Exp -> TL.Exp) -> [(G.VarName, Maybe G.Type, G.Exp)] -> T (VarEnv, TL.Exp -> TL.Exp)
+  loop varEnv cont [] = pure (varEnv, cont)
+  loop varEnv@(VarEnv m) cont ((x, mTy, exp) : rest) = do
+    (tau, translatedExp) <-
+      case mTy of
+        Nothing -> transExp emptyTyEnv varEnv exp
+        Just ty -> do
+          exp' <- transExpSub emptyTyEnv varEnv exp ty
+          pure (ty, exp')
+    let newCont e = cont $ TL.ExpCase translatedExp [TL.PatClause (TL.PatVar (varVar x)) e]
+    loop (VarEnv (Map.insert x tau m)) newCont rest
 
 transMain :: G.MeBody -> T TL.Exp
 transMain main = withCtx "main function" $ do
@@ -974,17 +1195,17 @@ transProg prog = do
           TL.ExpCase (var x) (starTyClauses ++ [catchAllStarTyClause x])
   mainEs <- mapM transMain (G.p_mains prog)
   pure (TL.Prog (implBinding : starTyBinding : bindings) mainEs)
-  where
-    defaultImplClause x =
-      TL.PatClause TL.PatWild (TL.ExpFail "no method implementation for ~a" [var x])
-    catchAllStarTyClause x =
-      TL.PatClause TL.PatWild (var x) -- handles builtin types
+ where
+  defaultImplClause x =
+    TL.PatClause TL.PatWild (TL.ExpFail "no method implementation for ~a" [var x])
+  catchAllStarTyClause x =
+    TL.PatClause TL.PatWild (var x) -- handles builtin types
 
 runTrans :: G.Program -> (Either TransError TL.Prog, [T.Text])
 runTrans prog = genRunTrans cfg prog transProg
-  where
-    cfg =
-      TransConfig
+ where
+  cfg =
+    TransConfig
       { tc_freshVarPrefix = "x-"
       , tc_assertSubType = assertSubType
       , tc_checkInst = \tenv formals args -> do
@@ -994,7 +1215,7 @@ runTrans prog = genRunTrans cfg prog transProg
             Right _ -> pure (Right ())
       }
 
-runTranslation' :: G.Program -> (Either String TL.Prog, [T.Text])
+runTranslation' :: G.Program -> (Either TransError TL.Prog, [T.Text])
 runTranslation' = runTrans
 
 -- Terminates the program if type checking fails
@@ -1008,12 +1229,13 @@ runTranslation traceFlag header filePath prog = do
     case result of
       Right p -> pure p
       Left err -> do
-        hPutStrLn stderr ("Typechecking " ++ filePath ++ " failed: " ++ err)
+        hPutStrLn stderr ("Typechecking " ++ filePath ++ " failed: " ++ (te_message err))
         exitWith (ExitFailure 1)
   pure (header <> TL.translateProg stdlibForTrans tProg)
 
 stdlibForTrans :: T.Text
-stdlibForTrans = [r|
+stdlibForTrans =
+  [r|
 (define (iface-sigs? x)
   (and (list? x) (not (null? x)) (equal? (car x) '-sig)))
 

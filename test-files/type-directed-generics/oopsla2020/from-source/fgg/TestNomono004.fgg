@@ -3,5 +3,5 @@
 package main;
 type Any(type ) interface {};
 type A(type ) struct {};
-func (x0 A(type )) ma1(type a Any())() Any() { return A(){}.ma1(A(a))() };
+func (x0 A(type )) ma1(type a Any())() Any() { return A(){}.ma1(A())() };
 func main() { _ = A(){}.ma1(Any())() }

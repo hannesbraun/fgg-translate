@@ -1,0 +1,48 @@
+/// TEST EVAL_GOOD: 1
+// Figure 4
+package main
+
+import "fmt"
+
+func intToString(i int) string {
+    return fmt.Sprintf("%v", i)
+}
+
+type Num struct {
+    val int
+}
+
+func (this Num) format() string { 
+    return intToString(this.val)
+}
+
+type Format interface {
+    format() string
+}
+
+func foo(x Format) int {
+    return 1
+}
+
+func doWork[T Format](x T) int {
+    return foo(x)
+}
+
+func doWork2[T Format](x T) string {
+    return x.format()
+}
+
+type FormatBox struct {
+    val Format
+}
+
+func mkFormatBox[T Format](x T) FormatBox {
+    return FormatBox { x }
+}
+
+func main() {
+  var x = Num { 1 }
+  doWork[Num](x)
+  fmt.Printf("%v", doWork2[Num](x))
+  mkFormatBox[Num](x)
+}

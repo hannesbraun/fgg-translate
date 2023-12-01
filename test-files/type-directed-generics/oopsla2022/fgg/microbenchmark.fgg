@@ -1,4 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-Top tuple-0)
+/// TEST_SYSTEMF EVAL_GOOD: StructTop
 
 package main;
 

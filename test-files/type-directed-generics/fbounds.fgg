@@ -1,4 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-Tuple12 (tuple-12 #f #t #f #t #f #t #f #t #f #t #f #t))
+/// TEST_SYSTEMF EVAL_GOOD:        (StructTuple12 #f #t #f #t #f #t #f #t #f #t #f #t)
 
 type EQ(type a EQ(a)) interface {
     Equal(x a) bool

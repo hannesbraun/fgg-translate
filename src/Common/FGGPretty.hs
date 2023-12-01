@@ -1,14 +1,15 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module Common.FGGPretty where
 
 import Common.FGGAST
-import Common.Types
 import Common.PrettyUtils
+import Common.Types
 import Common.Utils
-import Prettyprinter
 import qualified Data.Text as T
+import Prettyprinter
 
 instance Pretty MeName where
   pretty (MeName t) = text t
@@ -43,8 +44,8 @@ instance {-# OVERLAPPING #-} Pretty [Type] where
   pretty l = renderStdList' l
 
 instance Pretty BinOp where
-    pretty op =
-      text $
+  pretty op =
+    text $
       case op of
         Plus -> "+"
         Minus -> "-"
@@ -61,7 +62,7 @@ instance Pretty BinOp where
         Or -> "||"
 
 instance Pretty Exp where
-    pretty = prettyPrec 0
+  pretty = prettyPrec 0
 
 instance PrettyPrec Exp where
   prettyPrec prec e =
@@ -80,12 +81,14 @@ instance PrettyPrec Exp where
       BinOp op e1 e2 ->
         prettyPrec (precBinOp op) e1 <+> pretty op <+> prettyPrec (precBinOp op) e2
       UnOp op e ->
-        (case op of
-          Not -> text "!"
-          Inv -> text "-") <> prettyPrec maxPrec e
+        ( case op of
+            Not -> text "!"
+            Inv -> text "-"
+        )
+          <> prettyPrec maxPrec e
       Cond e1 e2 e3 ->
         withParens prec maxPrec $
-        pretty e1 <+> text "?" <+> pretty e2 <+> text ":" <+> pretty e3
+          pretty e1 <+> text "?" <+> pretty e2 <+> text ":" <+> pretty e3
       BoolLit True -> text "true"
       BoolLit False -> text "false"
       IntLit i -> text (showText i)
@@ -95,24 +98,24 @@ instance PrettyPrec Exp where
 instance Pretty TyFormals where
   pretty (TyFormals []) = mempty
   pretty (TyFormals l) =
-    text "(type " <>
-    sepBy comma (map prettyFormal l) <>
-    text ")"
-    where
-      prettyFormal (tyVar, Nothing) = pretty tyVar
-      prettyFormal (tyVar, Just t) = pretty tyVar <+> pretty t
+    text "(type "
+      <> sepBy comma (map prettyFormal l)
+      <> text ")"
+   where
+    prettyFormal (tyVar, Nothing) = pretty tyVar
+    prettyFormal (tyVar, Just t) = pretty tyVar <+> pretty t
 
 instance Pretty MeSig where
   pretty sig =
-    pretty (msig_tyArgs sig) <>
-    prettyArgs (msig_args sig) <>
-    pretty (msig_res sig)
-    where
-      prettyArgs [] = mempty
-      prettyArgs l =
-        text "(" <>
-        sepBy comma (map (\(v, t) -> pretty v <+> pretty t) l) <>
-        text ")"
+    pretty (msig_tyArgs sig)
+      <> prettyArgs (msig_args sig)
+      <> pretty (msig_res sig)
+   where
+    prettyArgs [] = mempty
+    prettyArgs l =
+      text "("
+        <> sepBy comma (map (\(v, t) -> pretty v <+> pretty t) l)
+        <> text ")"
 
 instance Pretty MeSpec where
   pretty spec = pretty (ms_name spec) <> pretty (ms_sig spec)

@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.1.
+-- This file has been generated from package.yaml by hpack version 0.35.2.
 --
 -- see: https://github.com/sol/hpack
 
@@ -83,12 +83,16 @@ library
       TypeDirectedGeneric.C
       TypeDirectedGeneric.CPretty
       TypeDirectedGeneric.SExp
+      TypeDirectedGeneric.SMLSharpTypedLambda.Language
+      TypeDirectedGeneric.SMLSharpTypedLambda.Translation
       TypeDirectedGeneric.SystemF
       TypeDirectedGeneric.SystemF.Erasure
       TypeDirectedGeneric.SystemF.Parser
       TypeDirectedGeneric.SystemF.Pretty
       TypeDirectedGeneric.SystemF.Syntax
       TypeDirectedGeneric.SystemF.Tests
+      TypeDirectedGeneric.SystemF.TopLevelTranslation
+      TypeDirectedGeneric.SystemF.Translation
       TypeDirectedGeneric.SystemF.Typechecker
       TypeDirectedGeneric.TransCommon
       TypeDirectedGeneric.Translation
@@ -100,7 +104,10 @@ library
   ghc-options: -Werror -W -fwarn-unused-imports -fwarn-unused-binds -fwarn-unused-matches -fwarn-unused-do-bind -fwarn-wrong-do-bind -fwarn-missing-signatures -fno-warn-partial-type-signatures -Wredundant-constraints
   build-depends:
       HTF
+    , aeson
+    , aeson-pretty
     , base >=4.7 && <5
+    , bytestring
     , containers
     , directory
     , dlist
@@ -152,6 +159,7 @@ test-suite go-types-test
       HTF
     , base >=4.7 && <5
     , dlist
+    , extra
     , filepath
     , gotrans
     , groom

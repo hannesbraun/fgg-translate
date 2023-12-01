@@ -26,7 +26,7 @@ type Any interface {}
 type Pair[T Any, U Any] struct { left T; right U }
 
 func (this Pair[T Format, U Format]) format() string {
-  return "(" + this.left.format() + "," + this.right.format() + ")"
+  return fmt.Sprintf("(%v,%v)", this.left.format(), this.right.format())
 }
 
 func main2() {

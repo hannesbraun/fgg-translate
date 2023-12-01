@@ -1,4 +1,5 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-Pair (tuple-2 (tuple-2 Kt-A tuple-0) (tuple-2 Kt-B tuple-0)))
+/// TEST_SYSTEMF EVAL_GOOD: (StructPair InterfaceAny InterfaceAny)
 package main;
 
 type Any(type ) interface {};

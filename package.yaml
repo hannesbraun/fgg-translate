@@ -32,6 +32,9 @@ library:
     - -Wredundant-constraints
   dependencies:
   - HTF
+  - aeson
+  - aeson-pretty
+  - bytestring
   - containers
   - directory
   - extra
@@ -76,6 +79,7 @@ tests:
     - -Wredundant-constraints
     dependencies:
     - HTF
+    - extra
     - filepath
     - gotrans
     - process
