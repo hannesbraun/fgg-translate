@@ -9,6 +9,7 @@ import Common.Types
 import Common.Utils
 import TypeDirectedGeneric.TransCommon
 
+import qualified TypeDirectedGeneric.Translation as TypeDirected
 import qualified TypeDirectedGeneric.SystemF.Erasure as Erasure
 import qualified TypeDirectedGeneric.SystemF.Translation as SystemFTrans
 import qualified TypeDirectedGeneric.SystemF.Typechecker as Typechecker
@@ -34,7 +35,10 @@ runTrans goProgram =
    in genRunTrans config goProgram topLevelTranslate
 
 runTranslation' :: G.Program -> (Either String UntypedTL.Prog, [T.Text])
-runTranslation' = runTrans
+runTranslation' p =
+  case TypeDirected.runTrans p of
+    (Left err, trace) -> (Left err, trace)
+    (Right _, _) -> runTrans p
 
 runTranslation :: TraceFlag -> T.Text -> FilePath -> G.Program -> IO T.Text
 runTranslation traceFlag header filePath prog = do

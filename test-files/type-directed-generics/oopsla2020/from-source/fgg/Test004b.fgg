@@ -1,5 +1,4 @@
 /// TEST TYPECHECK_BAD: Unknown field fA for struct A1
-/// TEST_SYSTEMF TYPECHECK_BAD: Unbound variable: latestSelection
 
 package main;
 type Any(type ) interface {};

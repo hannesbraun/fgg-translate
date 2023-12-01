@@ -1,5 +1,4 @@
 /// TEST TYPECHECK_BAD: Cannot instantiate method m1 for struct A with type arguments (A1)
-/// TEST_SYSTEMF TYPECHECK_BAD: Method declaration for struct not found: m1
 
 package main;
 type Any(type ) interface {};

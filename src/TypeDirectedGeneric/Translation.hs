@@ -5,6 +5,7 @@
 {-# LANGUAGE ViewPatterns #-}
 
 module TypeDirectedGeneric.Translation (
+  runTrans,
   runTranslation,
   runTranslation',
   stdlibForTrans,

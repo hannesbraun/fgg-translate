@@ -1,5 +1,4 @@
 /// TEST TYPECHECK_BAD: Unknown field f1 for struct B
-/// TEST_SYSTEMF TYPECHECK_BAD: Unbound variable: latestSelection
 
 package main;
 type A struct {};

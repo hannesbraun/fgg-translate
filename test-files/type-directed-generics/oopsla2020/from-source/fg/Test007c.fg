@@ -1,5 +1,4 @@
 /// TEST TYPECHECK_BAD: A is not a subtype of IA
-/// TEST_SYSTEMF TYPECHECK_BAD: Expression (m1_A Tuple0) original should have type (Tuple0@) -> (Tuple1@(StructA@)) -> StructA@ but has type (Tuple0@) -> (Tuple0@) -> StructA@
 
 package main;
 type IA interface { m1(x1 A) A };

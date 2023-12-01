@@ -1,5 +1,4 @@
 /// TEST TYPECHECK_BAD: No implementation of method m1 for struct A
-/// TEST_SYSTEMF TYPECHECK_BAD:  Method declaration for struct not found: m1
 
 package main;
 type A struct {};

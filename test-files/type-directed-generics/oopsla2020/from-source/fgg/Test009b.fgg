@@ -1,5 +1,4 @@
 /// TEST TYPECHECK_BAD: A1 is not a subtype of A
-/// TEST_SYSTEMF TYPECHECK_BAD: Cannot supply A1 when A is expected
 
 package main;
 type Any(type ) interface {};
