@@ -1,8 +1,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ViewPatterns #-}
+
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
 module TypeDirectedGeneric.TransCommon where
 
@@ -212,7 +212,7 @@ tyBuiltinToType b = G.TyNamed (tyBuiltinToTyName b) []
 classifyTyName :: G.TyName -> T TyNameKind
 classifyTyName t = do
   env <- ask
-  pure $ if | t `Map.member` (te_structs env) -> TyNameKindStruct
+  pure $ if | t `Map.member` te_structs env -> TyNameKindStruct
             | t `Set.member` builtinTypes -> TyNameKindBuiltin
             | otherwise -> TyNameKindIface
 
@@ -237,7 +237,7 @@ classifyTy tau = do
 
 withCtx :: String -> T a -> T a
 withCtx c action = do
-  modify' (\s -> s { ts_contextStack = c : (ts_contextStack s) })
+  modify' (\s -> s { ts_contextStack = c : ts_contextStack s })
   trace (T.pack $ "Starting " ++ c)
   x <- action
   trace (T.pack $ "Finished " ++ c)
@@ -449,7 +449,7 @@ assertTypeOk tenv tau = withCtx ("checking that type " ++ prettyS tau ++ " is OK
   case k of
     TyKindBuiltin _ -> pure ()
     TyKindTyVar a ->
-      if a `Map.member` (unTyEnv tenv)
+      if a `Map.member` unTyEnv tenv
       then pure ()
       else failT ("Unbound type variable " ++ prettyS a)
     TyKindStruct t args -> do

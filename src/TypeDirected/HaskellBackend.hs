@@ -35,7 +35,7 @@ translateTuples (x:y:ys) = "(" <> x <> "," <> translateTuples (y:ys) <> ")"
 -- v the current (data type) name we consider.
 toHaskellTypesInnerLevel :: [A.TyName] -> T.Type -> Text
 toHaskellTypesInnerLevel vs (T.Var n)
-  | elem (A.TyName n) vs = prefixData <> n
+  | A.TyName n `elem` vs = prefixData <> n
   | otherwise = prefixTyVar <> n
 toHaskellTypesInnerLevel vs (T.Tuple ts) = translateTuples $ map (toHaskellTypesInnerLevel vs) ts
 toHaskellTypesInnerLevel vs (T.Func t1 t2) = "(" <> toHaskellTypesInnerLevel vs t1 <> " -> " <> toHaskellTypesInnerLevel vs t2 <> ")"
@@ -60,8 +60,8 @@ projHaskell :: (Int, Int) -> Text
 projHaskell (i,n)
   | i == n && i == 1 = "\\ x -> x"
   | i < n  && i == 1 = "fst"
-  | i == n && i > 1  = Text.concat $ intersperse "." $ take (n-1) $ repeat " snd"
-  | i < n  && i > 1  = "fst ." <> (Text.concat $ intersperse "." $ take (i-1) $ repeat " snd")
+  | i == n && i > 1  = Text.concat $ intersperse "." $ replicate (n-1) " snd"
+  | i < n  && i > 1  = "fst ." <> (Text.concat $ intersperse "." $ replicate (i-1) " snd")
   | otherwise        = error "proj"
 
 
@@ -82,12 +82,12 @@ translateTypes = toHaskellTypes . TD.translateTypes
 translateExp :: T.Exp -> Text
 translateExp (T.VarExp x)
    = x
-translateExp (tuple@T.TupleExp{})
-  = case (T.tupleName tuple) of
+translateExp tuple@T.TupleExp{}
+  = case T.tupleName tuple of
       Nothing  -> translateTuples $ map translateExp (T.tupleExps tuple)
       Just t_S -> prefixData <> A.unTyName t_S <> " " <> (translateTuples $ map translateExp (T.tupleExps tuple))
-translateExp (proj@T.Proj{})
-  = case (T.projName proj) of
+translateExp proj@T.Proj{}
+  = case T.projName proj of
       Nothing  -> "(" <> projHaskell (T.projIdxs proj) <> ") " <> (translateExp $ T.projExps proj)
       Just t_S -> "(" <> projHaskell (T.projIdxs proj) <> ") " <>
                   "(" <> prefixDataUnMk <> A.unTyName t_S <> " " <> (translateExp $ T.projExps proj) <> ")"
@@ -95,9 +95,9 @@ translateExp (T.App e1 e2)
   = "(" <> translateExp e1 <> " " <> translateExp e2 <> ")"
 translateExp (T.Lambda v _ e)
   = "(" <> "\\ " <> v <> " -> " <> translateExp e <> ")"
-translateExp (e@T.Pack{})
+translateExp e@T.Pack{}
   = prefixData <> T.packD e <> " $ " <> translateExp (snd (T.pack e))
-translateExp (e@T.Unpack{})
+translateExp e@T.Unpack{}
   = "case " <> translateExp (T.unpackE1 e) <> " of; "
     <> prefixData <> T.unpackD e <> " " <> snd (T.unpack e) <> " -> " <> translateExp (T.unpackE2 e)
 translateExp (T.Letrec bs e)

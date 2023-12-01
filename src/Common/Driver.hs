@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Common.Driver where
 
@@ -28,8 +29,7 @@ targets = "'parse', 'parse-generic', 'syntax', 'type', 'type-generic', 'type-sys
 
 parseTarget :: ReadM Target
 parseTarget =
-    eitherReader $ \s ->
-        case s of
+    eitherReader $ \case
           "parse" -> Right TargetParse
           "parse-generic" -> Right TargetParseGeneric
           "syntax" -> Right TargetSyntax
@@ -80,7 +80,7 @@ canWrite fp c = do
 runSyntaxDirectedAST :: Args -> IO ()
 runSyntaxDirectedAST args = do
   goProg <- FgP.parseFile (a_inputFile args)
-  putStrLn $ show $ S.runTrans (a_casts args) goProg
+  print (S.runTrans (a_casts args) goProg)
 
 runTranslation :: Args -> String -> String -> Comment -> (T.Text -> IO T.Text) -> IO ()
 runTranslation args name ext c run = do
@@ -136,10 +136,10 @@ driverRun args = do
   case target of
     TargetParse -> do
       ast <- FgP.parseFile (a_inputFile args)
-      putStrLn (show ast)
+      print ast
     TargetParseGeneric -> do
       ast <- FggP.parseFile (a_inputFile args) parserCfg
-      putStrLn (show ast)
+      print ast
     TargetSyntax -> runSyntaxDirected args
     TargetSyntaxAST -> runSyntaxDirectedAST args
     TargetType -> fail "type-directed translation not implemented yet"

@@ -92,7 +92,7 @@ builtinTypes = Set.fromList ["int", "bool", "rune", "string"]
 classifyType :: G.TyName -> T TypeKind
 classifyType t = do
   env <- ask
-  pure $ if | t `Set.member` (te_structs env) -> KindStruct
+  pure $ if | t `Set.member` te_structs env -> KindStruct
             | t `Set.member` builtinTypes -> KindBuiltin
             | otherwise -> KindIface
 
@@ -134,10 +134,10 @@ transProg prog = do
           , DeclClass $ ClassDecl ["a", "b"] [] "Convert" [FunDep ["a"] "b"]
                [MeDecl "convert" (simpleSigma $ tv "a" `to` tv "b")]
           ] ++
-          (map (\f -> DeclData $ DataDecl (nameFty f) [] [simpleCtor (nameFda f)] [])
-                          (Set.toList fields)) ++
-          (map (\m -> DeclData $ DataDecl (nameMty m) [] [simpleCtor (nameMda m)] [])
-                          (Set.toList methodNames)) ++
+          map (\f -> DeclData $ DataDecl (nameFty f) [] [simpleCtor (nameFda f)] [])
+                          (Set.toList fields) ++
+          map (\m -> DeclData $ DataDecl (nameMty m) [] [simpleCtor (nameMda m)] [])
+                          (Set.toList methodNames) ++
           decls ++
           decls'
     , p_main = main
@@ -146,7 +146,7 @@ transProg prog = do
 transMain :: G.Main -> T Main
 transMain main = do
   bindings <-
-      flip mapM (G.m_bindings main) $ \(x, e) -> do
+      Control.Monad.forM (G.m_bindings main) $ \(x, e) -> do
           e' <- transExp e
           return (nameV x, e')
   res <- transExp (G.m_result main)
@@ -208,7 +208,7 @@ transStructDecl t fields = do
       dataCon = nameDat t
       ys = take (length fields) (map (\i -> VarName ("Y" <> showText i)) [1..])
   es <-
-      flip mapM (zip fields ys) $ \((_, ti), yi) -> do
+      Control.Monad.forM (zip fields ys) $ \((_, ti), yi) -> do
           kind <- classifyType ti
           case kind of
             KindStruct -> return (ExpVar yi)
@@ -219,20 +219,20 @@ transStructDecl t fields = do
           [DeclInst $ InstDecl noInstFlags Set.empty [] "ToStruct" [TypeTyCon tyCon []]
                [MethodDef "toStruct" (ExpDataCon (nameUniv t))]]
   inferInsts <-
-      flip mapM fields $ \(fi, ti) ->
+      Control.Monad.forM fields $ \(fi, ti) ->
           transInferRes (simpleTyCon tyCon) (simpleTyCon (nameFty fi)) (simpleTyCon (nameTy ti))
   return $
     [ DeclData $ DataDecl tyCon []
           [Constructor dataCon [] [] (map (\(_, ti) -> simpleTyCon (nameTy ti)) fields) Nothing]
           ["Show"]
     ] ++
-    (map DeclInst inferInsts) ++
+    map DeclInst inferInsts ++
     (flip map (zip [0..] fields) $ \(i, (fi, ti)) ->
          DeclInst $ InstDecl noInstFlags Set.empty [] "HasField"
               [simpleTyCon tyCon, simpleTyCon (nameFty fi), simpleTyCon (nameTy ti)]
               [MethodDef "field" $
                    ExpLambda "X" $ ExpLambda "X'" $
-                   ExpCase (ExpVar "X") [(Pat dataCon ys, (ExpVar (ys!!i)))]]
+                   ExpCase (ExpVar "X") [(Pat dataCon ys, ExpVar (ys!!i))]]
     ) ++
     toStruct ++
     [DeclVal $ ValDecl Nothing (nameMake t) ys $ foldl ExpApp (ExpDataCon dataCon) es]
@@ -268,7 +268,7 @@ transIfaceDecl t methods = do
                  ExpLambda "X" $ ExpCase (var "X")
                      [(Pat k ["Y"], var "show" `app` var "Y")]]
       ] ++
-      (map DeclInst insts) ++
+      map DeclInst insts ++
       toStructI
 
 transTypeDecl :: G.TyName -> G.TyName -> T [Decl]
@@ -277,7 +277,7 @@ transTypeDecl newTy existingTy = do
       tyConTxt = unTyConName tyCon
       dat = nameDat newTy
       unDat = nameUn newTy
-  return $
+  return
       [ DeclNewtype $ NewtypeDecl tyCon dat unDat (nameTy existingTy)
       , DeclInst $ InstDecl noInstFlags Set.empty []
             "Convert" [simpleTyCon tyCon, simpleTyCon (nameTy existingTy)]
@@ -303,7 +303,7 @@ transMeDecl
   y <- freshVar
   yis <- mapM (\_ -> freshVar) args
   bindings <-
-      flip mapM (zip3 xis yis args) $ \(xi, yi, (_, ti)) -> do
+      Control.Monad.forM (zip3 xis yis args) $ \(xi, yi, (_, ti)) -> do
           ki <- classifyType ti
           let ei =
                   case ki of
@@ -322,7 +322,7 @@ transMeDecl
             KindIface -> ExpApp (ExpDataCon (nameDat res)) exp'
             KindStruct -> exp'
             KindBuiltin -> exp'
-  return $
+  return
       [ DeclInst $ InstDecl noInstFlags tyvars (map simpleConstr context) className argTys
             [MethodDef "apply" $ ExpLambda x $ ExpLambda x' $ ExpLambda y $
                  ExpCase (ExpVar y) [(Pat (tupleDataCon (length args)) yis, ExpLet bindings exp)]]
@@ -343,7 +343,7 @@ transCastDecls goDecls = do
   decls' <- mapM transSpecWitness specs
   return $
       [ DeclClass $ ClassDecl ["a"] [] "ToStruct" []
-            [MeDecl "toStruct" (simpleSigma $ tv "a" `to` (TypeTyCon "AnyStruct" []))]
+            [MeDecl "toStruct" (simpleSigma $ tv "a" `to` TypeTyCon "AnyStruct" [])]
       , DeclData $ DataDecl "AnyStruct" []
           (flip map (structs ++ tys) $ \t ->
                Constructor (nameUniv t) [] [] [TypeTyCon (nameTy t) []] Nothing)
@@ -363,7 +363,7 @@ transCastDecl decls decl =
 
 -- SD-STRUCT-CAST
 transStructCastDecl :: [G.Decl] -> G.TyName -> T [Decl]
-transStructCastDecl _goDecls t = return $
+transStructCastDecl _goDecls t = return
     [DeclVal $ ValDecl Nothing (nameCast t) [] $
          ExpLambda "X" $
          ExpCase (ExpApp (ExpVar "toStruct") (ExpVar "X"))
@@ -376,7 +376,7 @@ transIfaceCastDecl goDecls t specs = do
       castAux =
           ExpLambda "X" $
           foldr makeWitnessCase (ExpApp (ExpDataCon (nameDat t)) (ExpVar "X")) specs
-  return $
+  return
       [ DeclVal $ ValDecl Nothing (nameCast t) [] $
           ExpLambda "X" $
           ExpLet [("castAux", castAux)] $
@@ -410,11 +410,11 @@ transSpecWitness spec = do
       className = nameMscls spec
       methodName = nameMsv spec
   pi <- transMethodConstraint spec (tv a)
-  return $
+  return
       [ DeclData $ DataDecl tyCon [a]
             [Constructor (nameMsda spec) [] [pi] [tv a] Nothing] []
       , DeclClass $ ClassDecl ["a"] [] className []
-            [MeDecl methodName (simpleSigma $ tv a `to` (TypeTyCon tyCon [tv a]))]
+            [MeDecl methodName (simpleSigma $ tv a `to` TypeTyCon tyCon [tv a])]
       , DeclInst $ InstDecl overlappableFlags (Set.singleton a) [] className [tv a]
             [MethodDef methodName $ ExpLambda "Y" $
              expCastError ("method not implemented " <> showText spec)]
@@ -458,7 +458,7 @@ transInferRes :: Tau -> Tau -> Tau -> T InstDecl
 transInferRes recv name res =
     pure $
          InstDecl noInstFlags Set.empty [] "InferRes" [recv, name, res]
-             [MethodDef "inferRes" $ ExpLambda "X1" $ ExpLambda "X2" $ ExpLambda "X3" $
+             [MethodDef "inferRes" $ ExpLambda "X1" $ ExpLambda "X2" $ ExpLambda "X3"
                   (ExpVar "X3")]
 
 
@@ -548,7 +548,7 @@ nameCast (G.TyName t) = VarName ("cast_" <> t)
 -- We assume that "__" does not occur in names of methods or types in Go.
 stringForMethodSpec :: G.MeSpec -> T.Text
 stringForMethodSpec (G.MeSpec (G.MeName m) (G.MeSig as (G.TyName u))) =
-  T.intercalate "__" (m : (map argString as) ++ [u])
+  T.intercalate "__" (m : map argString as ++ [u])
   where
     argString (_, G.TyName t) = t
 

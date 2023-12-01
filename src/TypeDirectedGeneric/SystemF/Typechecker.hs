@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveDataTypeable #-}
+
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
@@ -43,7 +43,7 @@ mkTySubst tyvars tys err =
 
 applyTySubst :: TySubst -> Ty -> Ty
 applyTySubst s@(TySubst subst) ty =
-  let allTyVars = M.keys subst ++ (listify matchTyVarName (ty : M.elems subst))
+  let allTyVars = M.keys subst ++ listify matchTyVarName (ty : M.elems subst)
       nextFresh =
         case mapMaybe freshTyVarCounter allTyVars of
           [] -> 0
@@ -216,7 +216,7 @@ tyOfExp e = do
     ExpTyAbs a e -> do
       tyRes <- withNewTyVar a (tyOfExp e)
       pure (TyForall a tyRes)
-    ExpCase _ [] -> failT ("Case with no clauses")
+    ExpCase _ [] -> failT "Case with no clauses"
     ExpCase e clauses -> do
       ty <- tyOfExp e
       clauseTys <- forM clauses (tyOfClause ty)
@@ -335,7 +335,7 @@ checkDecl decl =
 checkDeclBody :: Decl -> T ()
 checkDeclBody decl =
   case decl of
-    DeclData _ _ _ -> pure ()
+    DeclData {} -> pure ()
     DeclFun _ ty body -> checkExp body ty
 
 emptyTyCheckEnv :: TyCheckEnv
@@ -358,11 +358,11 @@ typeCheck (Prog decls mainE) = do
         DeclData c tyvars tys ->
           case M.lookup c (tce_decls env) of
             Just _ -> failT ("Duplicate constructor declaration: " ++ prettyS c)
-            Nothing -> pure $ env { tce_decls = (M.insert c (tyvars, tys) (tce_decls env)) }
+            Nothing -> pure $ env { tce_decls = M.insert c (tyvars, tys) (tce_decls env) }
         DeclFun f ty _ ->
           case M.lookup f (tce_vars env) of
             Just _ -> failT ("Duplicate function declaration: " ++ prettyS f)
-            Nothing -> pure $ env { tce_vars = (M.insert f ty (tce_vars env)) }
+            Nothing -> pure $ env { tce_vars = M.insert f ty (tce_vars env) }
     check :: T Ty
     check = do
       forM_ decls checkDecl

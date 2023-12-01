@@ -49,7 +49,7 @@ goLanguage =
     }
 
 annot :: T.Text -> GoParser a -> GoParser a
-annot s p = p <?> (T.unpack s)
+annot s p = p <?> T.unpack s
 
 lexer :: P.GenTokenParser T.Text () (Reader ParserConfig)
 lexer = P.makeTokenParser goLanguage
@@ -130,7 +130,7 @@ charLiteral = P.charLiteral lexer
 
 parseDecl :: GoParser Decl
 parseDecl = annot "declaration" $ do
-  d <- (parseTypeDecl <|> parseFunctionOrMeDecl)
+  d <- parseTypeDecl <|> parseFunctionOrMeDecl
   optSemi
   pure d
 
@@ -226,7 +226,7 @@ parseMeDeclPart2 = annot "method declaration" $ do
   formals <- parseTyFormals
   symbol ")"
   spec <- parseMethodSpec
-  body <- braces $ parseMethodBody
+  body <- braces parseMethodBody
   return $ MeDecl (var, ty, formals) spec body
 
 parseMethodBody :: GoParser MeBody
@@ -349,11 +349,11 @@ parsePrimTerm =
         let p = P.sepBy parseExpr comma
         in (Left <$> parens p) <|> (Right <$> braces p)
     parseParensTerm =
-        TermParens <$> (P.try (Left <$> (parens parseExpr)) <|> (Right <$> (parens parseType)))
+        TermParens <$> (P.try (Left <$> parens parseExpr) <|> (Right <$> parens parseType))
     parseTypeArgsAndArgs = do
       tyArgs <- parseTypeArgs
       args <- parseTermArgs
-      return $ Just $ (tyArgs, args)
+      return $ Just (tyArgs, args)
     parseArgs :: GoParser (Maybe ([Type], Either [Exp] [Exp]))
     parseArgs =
           P.try parseTypeArgsAndArgs
@@ -588,7 +588,7 @@ test_parseProg = do
                    )
               , TypeDecl "T" noTyFormals
                     (Struct
-                     [("f", (TyNamed "int" []))])
+                     [("f", TyNamed "int" [])])
               , MeDecl
                      ("t", "T", noTyFormals)
                      (MeSpec {
@@ -646,10 +646,10 @@ test_parseProg = do
               , TypeDecl "T" (TyFormals
                                 [ (TyVarName "a", Nothing)
                                 , (TyVarName "b",
-                                    (Just (TyNamed (TyName "I1")
-                                                     [TyVar (TyVarName "a")])))])
+                                    Just (TyNamed (TyName "I1")
+                                                     [TyVar (TyVarName "a")]))])
                     (Struct
-                     [("f", (TyVar (TyVarName "a")))])
+                     [("f", TyVar (TyVarName "a"))])
               , FunDecl
                      (MeSpec {
                         ms_name = "bar"
@@ -659,7 +659,7 @@ test_parseProg = do
                             (TyVar (TyVarName "a")) })
                      (MeBody [] (Just $ Var "x"))
               , MeDecl
-                     ("t", "T", (TyFormals [(TyVarName "a", Nothing)]))
+                     ("t", "T", TyFormals [(TyVarName "a", Nothing)])
                      (MeSpec {
                         ms_name = "foo"
                       , ms_sig =

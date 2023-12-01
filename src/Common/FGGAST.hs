@@ -109,8 +109,7 @@ canonMethodSig (MeSig (TyFormals tyArgs) args resType) =
     let boundTypes = map snd tyArgs
         argTypes = map snd args
         s = Map.fromList $
-            map (\((a, _), i) -> (a, TyVar (TyVarName ("__" <> showText i))))
-                (zip tyArgs [0..])
+            zipWith (curry (\((a, _), i) -> (a, TyVar (TyVarName ("__" <> showText i))))) tyArgs [0..]
     in (applyTySubst s boundTypes, applyTySubst s argTypes, applyTySubst s resType)
 
 -- For equality checking, we only consider types but not variable names of parameters.

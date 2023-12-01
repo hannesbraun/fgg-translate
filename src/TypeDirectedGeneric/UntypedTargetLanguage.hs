@@ -97,7 +97,7 @@ expToSExp exp =
     ExpVar (Var v) -> SExpVar v
     ExpConstr (Constr k) -> SExpSym k
     ExpApp e es ->
-      foldl (\se e -> SExp [app, se, (expToSExp e)]) (expToSExp e) es
+      foldl (\se e -> SExp [app, se, expToSExp e]) (expToSExp e) es
     ExpAppMulti e es ->
       SExp (expToSExp e : map expToSExp es)
     ExpAbs pats body ->
@@ -162,12 +162,12 @@ expToSExp exp =
 
 bindingToSExp :: Binding -> SExp
 bindingToSExp (Binding (Var v) pats body) =
-  SExp [SExpVar "define", (SExpVar v), expToSExp (ExpAbs pats body)]
+  SExp [SExpVar "define", SExpVar v, expToSExp (ExpAbs pats body)]
 
 progToSExps :: Prog -> SExps
 progToSExps prog =
   let Prog bindings mainExps = everywhere (mkT renameVars) prog
-  in SExps $ map bindingToSExp bindings ++ (map expToSExp mainExps)
+  in SExps $ map bindingToSExp bindings ++ map expToSExp mainExps
   where
     renameVars :: Var -> Var
     renameVars v@(Var t) =

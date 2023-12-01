@@ -1,6 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
+
+
 module TypeDirectedGeneric.SystemF (
   module TypeDirectedGeneric.SystemF.Syntax,
   module TypeDirectedGeneric.SystemF.Typechecker

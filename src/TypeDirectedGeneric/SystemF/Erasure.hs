@@ -66,7 +66,7 @@ erasePat p =
 eraseDecl :: Decl -> Maybe TL.Binding
 eraseDecl decl =
   case decl of
-    DeclData _ _ _ -> Nothing
+    DeclData {} -> Nothing
     DeclFun f _ e -> Just $ TL.Binding (transVarName f) [] (eraseExp e)
 
 erase :: Prog -> TL.Prog

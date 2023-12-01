@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
+
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
 module TypeDirectedGeneric.SystemF.Parser (
   FParser, parseTy, parseExp, parseProg, parsePatClause, runP, htf_thisModulesTests
@@ -41,7 +41,7 @@ lang =
     }
 
 annot :: T.Text -> FParser a -> FParser a
-annot s p = p <?> (T.unpack s)
+annot s p = p <?> T.unpack s
 
 lexer :: P.GenTokenParser T.Text () (Reader ParserConfig)
 lexer = P.makeTokenParser lang
@@ -231,8 +231,8 @@ parseAtomExp = annot "atom exp" $
       case name of
         Right x -> pureRight (ExpVar x)
         Left c -> do
-          tyArgs <- (parseConstrTyArgs <|> pure [])
-          expArgs <- (parseConstrExpArgs <|> pure [])
+          tyArgs <- parseConstrTyArgs <|> pure []
+          expArgs <- parseConstrExpArgs <|> pure []
           pureRight (ExpConstr c tyArgs expArgs)
     parseConstrTyArgs = do
       reservedOp "@"

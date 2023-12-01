@@ -95,16 +95,16 @@ runTestForSpec path idx spec transType = do
                     "EXPECT: " ++ T.unpack x)
                    trace
         _ ->
-          reportError path transType ("failed to typecheck but should succeed") trace
+          reportError path transType "failed to typecheck but should succeed" trace
     Right racketProg ->
       case spec of
         TypecheckBad _ ->
-          reportError path transType ("typechecked but should fail") trace
+          reportError path transType "typechecked but should fail" trace
         TypecheckGood ->
-          reportOk path transType idx ("typechecked as expected")
+          reportOk path transType idx "typechecked as expected"
         EvalGood r -> checkEval racketProg (Right r)
         EvalBad r -> checkEval racketProg (Left r)
-        Skip -> reportError path transType ("this test should have been skipped") trace
+        Skip -> reportError path transType "this test should have been skipped" trace
   where
     (runTrans, stdlib) = case transType of
       Normal -> (Translation.runTranslation', Translation.stdlibForTrans)
@@ -117,7 +117,7 @@ runTestForSpec path idx spec transType = do
       case (expectedResult, result) of
         (Right x, Right (removeNoise -> t)) ->
           if T.strip x == T.strip t
-          then reportOk path transType idx ("evaluated successfully to the expected result")
+          then reportOk path transType idx "evaluated successfully to the expected result"
           else reportError path transType
                  ("evaluated successfully but to an unexpected result.\n" ++
                   "RESULT: " ++ T.unpack t ++ "\n" ++
@@ -127,7 +127,7 @@ runTestForSpec path idx spec transType = do
           reportError path transType ("evaluation failed but should succeed: " ++ T.unpack err) []
         (Left x, Left err) ->
           if match x err
-          then reportOk path transType idx ("evaluation failed with the expected error message")
+          then reportOk path transType idx "evaluation failed with the expected error message"
           else reportError path transType
                  ("evaluation failed but with an unexpected error.\n" ++
                   "ERROR:  " ++ T.unpack err ++ "\n" ++
@@ -180,7 +180,7 @@ runAllTestsForTpypeDirectedGenerics = do
   testFiles <-
     filter (\fp -> takeExtension fp `elem` [".fg", ".fgg"]) <$>
     traverseDir testDir
-  when (length testFiles == 0) $
+  when (null testFiles) $
     fail ("No test files found in " ++ testDir)
   mapM_ runTest (zip testFiles [1..])
   where

@@ -21,8 +21,8 @@ instance Pretty Main where
         let bindings =
                 vcatBy line $ flip map (m_bindings main)  $ \(x, e) ->
                     text "!" <> pretty x <+> text "= force $" <+> pretty e
-        in text "main = " <> align (text "let " <> (align bindings) <> line <>
-                                    text "in print" <+> (parens (pretty (m_result main))))
+        in text "main = " <> align (text "let " <> align bindings <> line <>
+                                    text "in print" <+> parens (pretty (m_result main)))
 
 instance Pretty Decl where
     pretty decl =
@@ -50,7 +50,7 @@ instance Pretty ClassDecl where
 instance Pretty Constr where
     pretty c =
         let tyVars = Set.toList (c_tyVars c)
-            tyVarsPretty = text "forall" <+> (vsep (map pretty tyVars)) <+> text "."
+            tyVarsPretty = text "forall" <+> vsep (map pretty tyVars) <+> text "."
             lhs = c_lhs c
             lhsPretty = sepBy comma (map pretty lhs) <+> text "=>"
             rhsPretty = pretty (c_rhs c)
@@ -148,7 +148,7 @@ instance PrettyPrec Exp where
                       pretty x <+> text "=" <+> pretty e
               in withParens prec 1 $
                  align $
-                 text "let" <+> (align prettyBindings) <> line <>
+                 text "let" <+> align prettyBindings <> line <>
                  text "in" <+> pretty e
           ExpLambda x e ->
               withParens prec 1 $

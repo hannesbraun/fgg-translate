@@ -59,7 +59,7 @@ instance Pretty Stmt where
         "}" <>
         (case stmts2 of
            (Stmts []) -> mempty
-           (Stmts [s@(SIf _ _ _)]) -> text " else " <> pretty s
+           (Stmts [s@SIf {}]) -> text " else " <> pretty s
            _ -> text " else {" <> line <> indent 2 (pretty stmts2))
       SExp e -> pretty e <> semi
 

@@ -190,9 +190,7 @@ freshMethodSig sig = do
   where
     rewriteTyVar :: Map.Map G.TyVarName G.TyVarName -> G.TyVarName -> G.TyVarName
     rewriteTyVar m v =
-      case Map.lookup v m of
-        Just x -> x
-        Nothing -> v
+      fromMaybe v (Map.lookup v m)
 
 -- \Delta |-_{sig} M ~> E
 transMethodSig :: TyEnv -> TyExpEnv -> G.MeSig -> T TL.Exp
@@ -225,7 +223,7 @@ tryInst tyEnv (G.TyFormals formals) sigmas
             taus = map (maybeType . snd) formals
         eisM <-
             catchT
-                (flip mapM (zip sigmas taus) $ \(sigma, tau) ->
+                (Control.Monad.forM (zip sigmas taus) $ \(sigma, tau) ->
                  dictCons tyEnv sigma (G.applyTySubst subst tau))
         case eisM of
           Left e -> pure (Left ("bound mismatch: " ++ e))
@@ -272,7 +270,7 @@ matchTypes tau sigma =
     matchLists ts1 ts2
       | length ts1 /= length ts2 = TypeNotEq
       | otherwise =
-          let res = map (\(x, y) -> matchTypes x y) (zip ts1 ts2)
+          let res = zipWith (\ x y -> matchTypes x y) ts1 ts2
           in foldl combine TypeEq res
     combine TypeEq TypeEq = TypeEq
     combine TypeNotEq _ = TypeNotEq
@@ -541,7 +539,7 @@ transExp' tyEnv varEnv (G.MeCall (G.Var (G.VarName "fmt")) (G.MeName me) [] (fmt
     case fmtT of
       TL.ExpStr text -> pure text
       _ -> failT (T.unpack me ++ " requires string literal as first argument, not " ++ prettyS fmtT)
-  argsT <- mapM (\e -> transExp tyEnv varEnv e >>= \(_, t) -> pure t) args
+  argsT <- mapM (transExp tyEnv varEnv Control.Monad.>=> (\ (_, t) -> pure t)) args
   if me == "Printf"
     then pure (tyBuiltinToType TyVoid, TL.printString fmt argsT)
     else pure (tyBuiltinToType TyString, TL.toString fmt argsT)
@@ -609,7 +607,7 @@ transExp' tyEnv varEnv assertE@(G.TyAssert exp tau) = do
                         prettyS exp ++ " has static type " ++ prettyS sigma ++
                         " and this type is a subtype of " ++ prettyS tau)
            else
-             if (Set.null (G.freeTyVars sigma))
+             if Set.null (G.freeTyVars sigma)
                then failT ("Assertion " ++ prettyS assertE ++
                            " will definitely fail at runtime because " ++
                            prettyS exp ++ " has static type " ++ prettyS sigma ++

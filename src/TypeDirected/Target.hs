@@ -58,8 +58,8 @@ subst phi t = subst2 [] phi t
 -- | xs list of bound variables that shall not be substituted
 subst2 :: [TyName] -> [(TyName, Type)] -> Type -> Type
 subst2 xs phi (Var x)
-  | elem x xs = (Var x)
-  | otherwise =  case (lookup x phi) of
+  | x `elem` xs = Var x
+  | otherwise =  case lookup x phi of
                     Just t   -> t
                     Nothing -> Var x
 subst2 xs phi (Tuple ts) = Tuple $ map (subst2 xs phi) ts

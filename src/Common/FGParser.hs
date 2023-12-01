@@ -45,7 +45,7 @@ goLanguage =
     }
 
 annot :: T.Text -> GoParser a -> GoParser a
-annot s p = p <?> (T.unpack s)
+annot s p = p <?> T.unpack s
 
 lexer :: P.GenTokenParser T.Text () Identity
 lexer = P.makeTokenParser goLanguage
@@ -312,7 +312,7 @@ parseMainFunc :: GoParser Main
 parseMainFunc = annot "main function" $ do
   reserved "func"
   x <- identifier
-  unless (x == "main") $ fail ("Main function must be named 'main'")
+  unless (x == "main") $ fail "Main function must be named 'main'"
   parens $ return ()
   braces $ do
     l <- P.many1 parseBinding
@@ -393,7 +393,7 @@ test_parseProg = do
                      (Var "t")]
         , p_main =
             Main [
-               ("x", (StructLit "T" [IntLit 1]))
+               ("x", StructLit "T" [IntLit 1])
               ]
               (MeCall
                   (MeCall (Var "x") "foo" [])

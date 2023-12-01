@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
+
 module TypeDirectedGeneric.SystemF.Pretty () where
 
 import Common.Types
@@ -124,7 +124,7 @@ instance PrettyPrec Pat where
         withParens prec funAppPrec $
         let pats' = map (prettyPrec funAppPrec) pats
             tys' = map (prettyPrec funAppPrec) tys
-        in pretty c <> text "@" <> (sepBy space tys') <> braces (sepBy comma pats')
+        in pretty c <> text "@" <> sepBy space tys' <> braces (sepBy comma pats')
 
 instance Pretty PrimTy where
   pretty t =
@@ -160,11 +160,11 @@ instance Pretty Decl where
     case d of
       DeclData c as tys ->
         text "data" <+> pretty c <+> text ":" <+>
-        text "∀" <> (sepBy space (map pretty as)) <> text "." <>
+        text "∀" <> sepBy space (map pretty as) <> text "." <>
         sepBy space (map pretty tys)
       DeclFun x t e ->
         align (text "fun" <+> pretty x <+> text ":" <+> pretty t <+> text "=" <> line <>
-               (indent 2 (pretty e)))
+               indent 2 (pretty e))
 
 instance Pretty Prog where
   pretty (Prog decls e) =

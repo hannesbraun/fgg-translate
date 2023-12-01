@@ -84,13 +84,13 @@ runFileTest' spec flag = do
         putStrLn ("Stderr:\n" ++ err)
         fail "ERROR"
     (ExitSuccess, Error) -> do
-        putStrLn ("Running ghci succeeded but should fail")
+        putStrLn "Running ghci succeeded but should fail"
         fail "ERROR"
     (ExitSuccess, TestOutputOk expectedOut) -> do
-        putStrLn ("Running ghci succeeded")
+        putStrLn "Running ghci succeeded"
         let tOut = T.strip (T.pack out)
         if tOut == expectedOut
-           then putStrLn ("Result ok")
+           then putStrLn "Result ok"
            else do
              putStrLn ("Expected " ++ show (ts_output spec) ++ " as result, got " ++ show tOut)
              fail "ERROR"
@@ -107,16 +107,16 @@ main = do
   let fast = fastOpt `elem` args
       hs = hsOpt `elem` args
       args' = filter (\x -> not (x `elem` customOpts)) args
-  putStrLn ("Running unit tests ...")
+  putStrLn "Running unit tests ..."
   ecode <- runTestWithArgs args' htf_importedTests
   case ecode of
     ExitFailure _ -> exitWith ecode
     ExitSuccess -> do
       unless fast $ do
-        putStrLn ("Running tests for type-directed translation with generics ...")
+        putStrLn "Running tests for type-directed translation with generics ..."
         runAllTestsForTpypeDirectedGenerics
         when hs $ do
-          putStrLn ("Running tests for syntax-directed translation ...")
+          putStrLn "Running tests for syntax-directed translation ..."
           mapM_ runFileTest fileTests
   where
     fastOpt = "--fast"
