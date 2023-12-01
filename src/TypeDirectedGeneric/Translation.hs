@@ -20,7 +20,6 @@ import TypeDirectedGeneric.TransCommon
 import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
 
 import Control.Monad.Extra
-import Control.Monad.Identity
 import Data.Generics
 import qualified Data.List as List
 import Data.Map.Strict (Map)
@@ -245,7 +244,7 @@ tryInst tyEnv (G.TyFormals formals) sigmas
           taus = map (maybeType . snd) formals
       eisM <-
         catchT
-          ( Control.Monad.forM (zip sigmas taus) $ \(sigma, tau) ->
+          ( forM (zip sigmas taus) $ \(sigma, tau) ->
               dictCons tyEnv sigma (G.applyTySubst subst tau)
           )
       case eisM of
@@ -630,7 +629,7 @@ transExp' tyEnv varEnv (G.MeCall (G.Var (G.VarName "fmt")) (G.MeName me) [] (fmt
         case fmtT of
           TL.ExpStr text -> pure text
           _ -> failT (T.unpack me ++ " requires string literal as first argument, not " ++ prettyS fmtT)
-      argsT <- mapM (transExp tyEnv varEnv Control.Monad.>=> (\(_, t) -> pure t)) args
+      argsT <- mapM (transExp tyEnv varEnv >=> (\(_, t) -> pure t)) args
       if me == "Printf"
         then pure (tyBuiltinToType TyVoid, TL.printString fmt argsT)
         else pure (tyBuiltinToType TyString, TL.toString fmt argsT)

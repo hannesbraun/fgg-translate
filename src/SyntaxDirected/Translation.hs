@@ -11,6 +11,7 @@ import Common.HaskellPretty ()
 import Common.Types
 import Common.Utils
 
+import Control.Monad
 import Control.Monad.Extra
 import Control.Monad.Identity
 import Control.Monad.RWS.Strict

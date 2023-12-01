@@ -3,23 +3,16 @@
 
 module Main where
 
-{-@ HTF_TESTS @-}
-{-@ HTF_TESTS @-}
-{-@ HTF_TESTS @-}
-{-@ HTF_TESTS @-}
-{-@ HTF_TESTS @-}
-{-@ HTF_TESTS @-}
-{-@ HTF_TESTS @-}
 import Common.Driver
-import Common.FGGAST
+import {-@ HTF_TESTS @-} Common.FGGAST
 import Common.FGGParser
-import Common.FGParser
+import {-@ HTF_TESTS @-} Common.FGParser
 import Common.Types
 import TestsForTypeDirectedGenerics
-import TypeDirectedGeneric.SystemF.Syntax
-import TypeDirectedGeneric.SystemF.Tests
-import TypeDirectedGeneric.SystemF.Typechecker
-import TypeDirectedGeneric.UntypedTargetLanguage
+import {-@ HTF_TESTS @-} TypeDirectedGeneric.SystemF.Syntax
+import {-@ HTF_TESTS @-} TypeDirectedGeneric.SystemF.Tests
+import {-@ HTF_TESTS @-} TypeDirectedGeneric.SystemF.Typechecker
+import {-@ HTF_TESTS @-} TypeDirectedGeneric.UntypedTargetLanguage
 
 import Control.Monad
 import qualified Data.List as L

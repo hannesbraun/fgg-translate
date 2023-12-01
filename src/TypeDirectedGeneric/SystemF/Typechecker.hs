@@ -16,7 +16,6 @@ import TypeDirectedGeneric.SystemF.Pretty ()
 import TypeDirectedGeneric.SystemF.Syntax
 
 import Control.Monad.Except
-import Control.Monad.Identity
 import Control.Monad.RWS.Strict
 import Control.Monad.State.Strict
 import Control.Monad.Writer

@@ -13,7 +13,6 @@ import Common.Utils
 import Prettyprinter
 
 import Control.Monad.Except
-import Control.Monad.Identity
 import Control.Monad.RWS.Strict
 import Control.Monad.Writer
 import qualified Data.DList as DL
