@@ -1229,7 +1229,7 @@ runTranslation traceFlag header filePath prog = do
     case result of
       Right p -> pure p
       Left err -> do
-        hPutStrLn stderr ("Typechecking " ++ filePath ++ " failed: " ++ (te_message  err))
+        hPutStrLn stderr ("Typechecking " ++ filePath ++ " failed: " ++ (te_message err))
         exitWith (ExitFailure 1)
   pure (header <> TL.translateProg stdlibForTrans tProg)
 

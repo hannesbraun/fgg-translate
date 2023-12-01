@@ -17,9 +17,9 @@ import Text.Groom
 import Text.Printf
 import Text.Regex.TDFA hiding (match)
 import TypeDirectedGeneric.SystemF.TopLevelTranslation as SFTranslation
+import TypeDirectedGeneric.TransCommon
 import TypeDirectedGeneric.Translation as Translation
 import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
-import TypeDirectedGeneric.TransCommon
 
 data TranslationType
   = Normal

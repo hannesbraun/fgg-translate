@@ -160,10 +160,11 @@ data TransState = TransState
   , ts_contextStack :: [String]
   }
 
-data TransErrorCode =
-  TransErrorUnsupportedTypeAssertion
+data TransErrorCode
+  = TransErrorUnsupportedTypeAssertion
   | TransErrorDuplicateDeclaration
-  -- more will come
+
+-- more will come
 
 data TransError = TransError
   { te_errorCode :: Maybe TransErrorCode
@@ -545,11 +546,12 @@ genRunTrans cfg prog transProg =
             m = G.ms_name spec
         case List.find (\mDecl -> G.ms_name (me_spec mDecl) == m) oldMethods of
           Just _ ->
-            Left $ TransError (Just TransErrorDuplicateDeclaration) $
-              "Duplicate method declaration for receiver "
-                ++ prettyS recvTy
-                ++ " and method "
-                ++ prettyS m
+            Left $
+              TransError (Just TransErrorDuplicateDeclaration) $
+                "Duplicate method declaration for receiver "
+                  ++ prettyS recvTy
+                  ++ " and method "
+                  ++ prettyS m
           Nothing ->
             let newMethod =
                   MeDecl

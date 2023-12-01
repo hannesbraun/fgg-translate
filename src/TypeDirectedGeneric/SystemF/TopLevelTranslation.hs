@@ -9,10 +9,10 @@ import Common.Types
 import Common.Utils
 import TypeDirectedGeneric.TransCommon
 
-import qualified TypeDirectedGeneric.Translation as TypeDirected
 import qualified TypeDirectedGeneric.SystemF.Erasure as Erasure
 import qualified TypeDirectedGeneric.SystemF.Translation as SystemFTrans
 import qualified TypeDirectedGeneric.SystemF.Typechecker as Typechecker
+import qualified TypeDirectedGeneric.Translation as TypeDirected
 import qualified TypeDirectedGeneric.UntypedTargetLanguage as UntypedTL
 
 -- Translate Go to System F, then to Racket (while performing type erasure)
