@@ -635,6 +635,7 @@ transExp' tyEnv varEnv (G.MeCall (G.Var (G.VarName "fmt")) (G.MeName me) [] (fmt
         then pure (tyBuiltinToType TyVoid, TL.printString fmt argsT)
         else pure (tyBuiltinToType TyString, TL.toString fmt argsT)
 transExp' tyEnv varEnv (G.MeCall recvExp m actuals args) = do
+  assertTypesOk tyEnv actuals
   (tau, eT) <- transExp tyEnv varEnv recvExp
   k <- classifyTy tau
   case k of
