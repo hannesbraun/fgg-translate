@@ -1,11 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module TypeDirectedGeneric.CPretty where
 
 import Prettyprinter
 
-import TypeDirectedGeneric.C
 import Common.PrettyUtils
 import Common.Types
+import TypeDirectedGeneric.C
 
 instance Pretty TyName where
   pretty (TyName t) = text t
@@ -21,10 +22,11 @@ instance Pretty Var where
 
 instance Pretty Ty where
   pretty (Ty n k) =
-    pretty n <>
-    (case k of
-       TkPtr -> text " *"
-       TkVal -> mempty)
+    pretty n
+      <> ( case k of
+            TkPtr -> text " *"
+            TkVal -> mempty
+         )
 
 instance Pretty a => Pretty (PComp a) where
   pretty (PComp x mi) =
@@ -46,21 +48,27 @@ instance Pretty Stmt where
       SReturn e ->
         text "return" <+> pretty e <> semi
       SDeclVar t v mn ->
-        pretty t <+> pretty v <>
-        (case mn of
-           Just (Len i) -> brackets (pretty i)
-           Nothing -> mempty) <>
-        semi
+        pretty t
+          <+> pretty v
+            <> ( case mn of
+                  Just (Len i) -> brackets (pretty i)
+                  Nothing -> mempty
+               )
+            <> semi
       SAssign p e ->
         pretty p <+> text "=" <+> pretty e <> semi
       SIf e stmts1 stmts2 ->
-        text "if (" <> pretty e <> ") {" <> line <>
-        indent 2 (pretty stmts1) <>
-        "}" <>
-        (case stmts2 of
-           (Stmts []) -> mempty
-           (Stmts [s@SIf {}]) -> text " else " <> pretty s
-           _ -> text " else {" <> line <> indent 2 (pretty stmts2))
+        text "if ("
+          <> pretty e
+          <> ") {"
+          <> line
+          <> indent 2 (pretty stmts1)
+          <> "}"
+          <> ( case stmts2 of
+                (Stmts []) -> mempty
+                (Stmts [s@SIf{}]) -> text " else " <> pretty s
+                _ -> text " else {" <> line <> indent 2 (pretty stmts2)
+             )
       SExp e -> pretty e <> semi
 
 renderStdList :: Pretty a => [a] -> Doc ann
@@ -68,7 +76,7 @@ renderStdList [] = text "()"
 renderStdList x = renderList "(" "," x ")"
 
 instance Pretty Exp where
-    pretty = prettyPrec 0
+  pretty = prettyPrec 0
 
 instance PrettyPrec Exp where
   prettyPrec prec exp =
@@ -77,13 +85,13 @@ instance PrettyPrec Exp where
       EPath p -> pretty p
       ECast ty e ->
         withParens prec precCast $
-        parens (pretty ty) <> pretty e
+          parens (pretty ty) <> pretty e
       EDref e ->
         withParens prec precDref $
-        text "*" <> prettyPrec maxPrec e
+          text "*" <> prettyPrec maxPrec e
       ERef e ->
         withParens prec precRef $
-        text "*" <> prettyPrec maxPrec e
+          text "*" <> prettyPrec maxPrec e
       ECall f args ->
         pretty f <> renderStdList args
       EBinOp el op er ->
@@ -102,8 +110,8 @@ precRef :: Prec
 precRef = maxPrec
 
 instance Pretty BinOp where
-    pretty op =
-      text $
+  pretty op =
+    text $
       case op of
         Plus -> "+"
         Minus -> "-"
@@ -121,13 +129,13 @@ instance Pretty BinOp where
 
 precUnOp :: UnOp -> Int
 precUnOp op =
-    case op of
-      Not -> maxPrec
-      Inv -> maxPrec
+  case op of
+    Not -> maxPrec
+    Inv -> maxPrec
 
 instance Pretty UnOp where
-    pretty Not = "!"
-    pretty Inv = "-"
+  pretty Not = "!"
+  pretty Inv = "-"
 
 instance Pretty Decl where
   pretty d =
@@ -138,21 +146,31 @@ instance Pretty Decl where
 
 instance Pretty StructDecl where
   pretty (StructDecl name flds) =
-    text "typedef struct {" <> line <>
-    indent 2 (termBy semi (map (\(ty, f) -> pretty ty <+> pretty f) flds)) <> line <>
-    text "} " <> pretty name <> semi
+    text "typedef struct {"
+      <> line
+      <> indent 2 (termBy semi (map (\(ty, f) -> pretty ty <+> pretty f) flds))
+      <> line
+      <> text "} "
+      <> pretty name
+      <> semi
 
 instance Pretty UnionDecl where
   pretty (UnionDecl name alts) =
-    text "typedef struct {" <> line <>
-    indent 2 (termBy semi (map (\(ty, f) -> pretty ty <+> pretty f) alts)) <> line <>
-    text "} " <> pretty name <> semi
+    text "typedef struct {"
+      <> line
+      <> indent 2 (termBy semi (map (\(ty, f) -> pretty ty <+> pretty f) alts))
+      <> line
+      <> text "} "
+      <> pretty name
+      <> semi
 
 instance Pretty FunDecl where
   pretty (FunDecl name args res body) =
-    pretty res <+> pretty name <>
-    parens (sepBy comma (map (\(t, x) -> pretty t <+> pretty x) args)) <> line <>
-    brackets (indent 2 (pretty body))
+    pretty res
+      <+> pretty name
+        <> parens (sepBy comma (map (\(t, x) -> pretty t <+> pretty x) args))
+        <> line
+        <> brackets (indent 2 (pretty body))
 
 instance Pretty Prog where
   pretty (Prog ds) = vcat (map pretty ds)

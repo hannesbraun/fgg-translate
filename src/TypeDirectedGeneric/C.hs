@@ -35,27 +35,24 @@ data Exp
   = EVar Var
   | EPath Path
   | ECast Ty Exp
-  | EDref Exp -- *e
-  | ERef Exp  -- &e
+  | EDref Exp -- \*e
+  | ERef Exp -- &e
   | ECall FunName [Exp]
   | EBinOp Exp BinOp Exp
   | EUnOp UnOp Exp
   | EArrCons [Exp] -- {e1,...,en}
 
-data StructDecl
-  = StructDecl
+data StructDecl = StructDecl
   { sd_name :: TyName
   , sd_fields :: [(Ty, Fld)]
   }
 
-data UnionDecl
-  = UnionDecl
+data UnionDecl = UnionDecl
   { ud_name :: TyName
   , ud_alts :: [(Ty, Fld)]
   }
 
-data FunDecl
-  = FunDecl
+data FunDecl = FunDecl
   { fd_name :: FunName
   , fd_args :: [(Ty, Var)]
   , fd_return :: Ty

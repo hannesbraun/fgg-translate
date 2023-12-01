@@ -1,9 +1,9 @@
 module TypeDirectedGeneric.SystemF.Erasure (
-  erase
-  ) where
+  erase,
+) where
 
-import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
 import TypeDirectedGeneric.SystemF.Syntax
+import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
 
 import Data.Maybe
 
@@ -66,7 +66,7 @@ erasePat p =
 eraseDecl :: Decl -> Maybe TL.Binding
 eraseDecl decl =
   case decl of
-    DeclData {} -> Nothing
+    DeclData{} -> Nothing
     DeclFun f _ e -> Just $ TL.Binding (transVarName f) [] (eraseExp e)
 
 erase :: Prog -> TL.Prog
@@ -75,4 +75,4 @@ erase p =
     Prog decls exp ->
       let bindings = mapMaybe eraseDecl decls
           tlExp = eraseExp exp
-      in TL.Prog bindings [tlExp]
+       in TL.Prog bindings [tlExp]
