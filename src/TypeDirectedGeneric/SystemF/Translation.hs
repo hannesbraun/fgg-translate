@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module TypeDirectedGeneric.SystemF.Translation where
+module TypeDirectedGeneric.SystemF.Translation (translateProgram) where
 
 import Control.Monad
 import qualified Data.List as List
@@ -27,18 +27,6 @@ typePrefix (G.Struct _) = structPrefix
 typePrefix (G.TySyn _) = T.pack "TypeSynonym"
 typePrefix (G.Iface _) = interfacePrefix
 
-isInterface :: T.Text -> Bool
-isInterface typeName = T.isPrefixOf interfacePrefix typeName
-
-isStruct :: T.Text -> Bool
-isStruct typeName = T.isPrefixOf structPrefix typeName
-
-stripPrefixOrIgnore :: T.Text -> T.Text -> T.Text
-stripPrefixOrIgnore prefix name = fromMaybe name (T.stripPrefix prefix name)
-
-voidReceiver :: (G.VarName, G.TyName, G.TyFormals)
-voidReceiver = (G.VarName "void", G.TyName "void", G.TyFormals [])
-
 tupleName :: Int -> TL.ConstrName
 tupleName i = TL.ConstrName $ T.pack $ "Tuple" ++ show i
 
@@ -48,14 +36,8 @@ tupleTyVarName i = TL.TyVarName $ T.pack $ "T" ++ show i
 generateGenericTuples :: Int -> [TL.Decl]
 generateGenericTuples max = map (\i -> TL.DeclData (tupleName i) (map tupleTyVarName [1 .. i]) (map (\j -> TL.TyVar (tupleTyVarName j)) [1 .. i])) [0 .. max]
 
-fst3 :: (a, b, c) -> a
-fst3 (a, _, _) = a
-
 snd3 :: (a, b, c) -> b
 snd3 (_, a, _) = a
-
-thrd3 :: (a, b, c) -> c
-thrd3 (_, _, a) = a
 
 translateDeclaration :: G.Decl -> T [TL.Decl]
 translateDeclaration (G.TypeDecl (G.TyName name) formals typeLiteral) = withCtx ("translation of type declaration " ++ prettyS name) $ do
@@ -103,9 +85,6 @@ translateMethodDeclaration receiver methodSpec methodBody = do
 
 translateTyVarNames :: G.TyFormals -> [TL.TyVarName]
 translateTyVarNames formals = map (\formal -> TL.TyVarName $ G.unTyVarName (fst formal)) (G.unTyFormals formals)
-
-translateFormals :: G.TyFormals -> [TL.Ty]
-translateFormals formals = map (\x -> TL.TyVar x) (translateTyVarNames formals)
 
 translateTypeLiteral :: TyEnv -> G.TyFormals -> G.TyLit -> T.Text -> T ([TL.Ty], [TL.Decl])
 translateTypeLiteral tyEnv _ (G.Struct fields) _ = do
@@ -156,11 +135,6 @@ translateMethodSpec oldTyEnv receiver (G.MeSpec _meName (G.MeSig formals args re
       let translatedTypeWithRecvCoercions = TL.TyArrow translatedReceiverCoercionArgs translatedTypeWithReceiver
       let translatedTypeWithRecvTypeAbstractions = translateTypeAbstractions receiverTypeArgs translatedTypeWithRecvCoercions
       pure translatedTypeWithRecvTypeAbstractions
-
-generateMethodSuffix :: Maybe (G.VarName, G.TyName, G.TyFormals) -> T.Text
-generateMethodSuffix Nothing = ""
-generateMethodSuffix (Just ("void", _, _)) = ""
-generateMethodSuffix (Just (name, _, _)) = "_" <> G.unVarName name
 
 translateFunctionArguments :: TyEnv -> [(G.VarName, G.Type)] -> T TL.Ty
 translateFunctionArguments tyEnv args = do
@@ -276,24 +250,6 @@ buildAbstractionExpression oldTyEnv innerExpression receiver (G.MeSpec _meName (
       pure $ translateTypeAbstractionExpressions receiverTypeArgs abstracted
     Nothing -> pure abstracted
   pure abstracted
-
-translateFunctionArgumentsForExp :: TyEnv -> [(G.VarName, G.Type)] -> TL.Exp -> T TL.Exp
-translateFunctionArgumentsForExp _ [] innerExpression = pure innerExpression
-translateFunctionArgumentsForExp tyEnv ((varName, goType) : xs) innerExpression = do
-  translatedType <- translateType tyEnv goType
-  translateFunctionArgumentsForExp tyEnv xs (TL.ExpAbs (translateVarName varName) translatedType innerExpression)
-
-translateFormalsForExp :: TyEnv -> [(G.TyVarName, Maybe G.Type)] -> TL.Exp -> T TL.Exp
-translateFormalsForExp _ [] innerExpression = pure innerExpression
-translateFormalsForExp tyEnv (x : xs) innerExpression = do
-  let typeVariableName = G.unTyVarName (fst x)
-  translateFormalsForExp tyEnv xs (TL.ExpTyAbs (TL.TyVarName typeVariableName) innerExpression)
-
-meSpecArgs :: G.MeSpec -> [TL.Exp]
-meSpecArgs methodSpec =
-  let args = G.msig_args $ G.ms_sig methodSpec
-      argNames = map fst args
-   in map (\x -> TL.ExpVar (translateVarName x)) argNames
 
 methods :: TyEnv -> G.Type -> T [G.MeSpec]
 methods tyEnv ty = withCtx ("computing methods for " ++ prettyS ty) $ do
