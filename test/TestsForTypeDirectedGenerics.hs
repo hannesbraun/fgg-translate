@@ -19,6 +19,7 @@ import Text.Regex.TDFA hiding (match)
 import TypeDirectedGeneric.SystemF.TopLevelTranslation as SFTranslation
 import TypeDirectedGeneric.Translation as Translation
 import qualified TypeDirectedGeneric.UntypedTargetLanguage as TL
+import TypeDirectedGeneric.TransCommon
 
 data TranslationType
   = Normal
@@ -87,10 +88,13 @@ runTestForSpec path idx spec transType = do
   prog <- parseFile path parseCfg
   let (result, trace) = runTrans prog
   case result of
+    -- automatically filter errors due to unsupported type assertions in the SystemF translation
+    Left (TransError (Just TransErrorUnsupportedTypeAssertion) _)
+      | transType == SystemF -> pure ()
     Left err ->
       case spec of
         TypecheckBad x ->
-          if match x (T.pack err)
+          if match x (T.pack (te_message err))
             then reportOk path transType idx "failed to typecheck with the expected error message"
             else
               reportError
@@ -98,7 +102,7 @@ runTestForSpec path idx spec transType = do
                 transType
                 ( "failed to typecheck with unexpected error.\n"
                     ++ "ERROR:  "
-                    ++ err
+                    ++ (te_message err)
                     ++ "\n"
                     ++ "EXPECT: "
                     ++ T.unpack x

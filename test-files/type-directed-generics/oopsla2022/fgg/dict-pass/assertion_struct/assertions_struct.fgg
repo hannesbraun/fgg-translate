@@ -1,5 +1,4 @@
 /// TEST EVAL_BAD: Cannot cast value (tuple-3 (-sig ()) (tuple-2 (Kt-ts (tuple-1 Kt-bool)) (tuple-2 (tuple-2 Kt-int tuple-0) (tuple-2 Kt-bool tuple-0))) ()) to struct type ts(int) with runtime type (Kt-ts (tuple-1 Kt-int))
-/// TEST_SYSTEMF SKIP
 package main;
 
 type tau interface{};

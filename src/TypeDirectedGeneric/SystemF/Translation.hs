@@ -791,6 +791,9 @@ translateExpression varEnv tyEnv (G.Cond a b c) = do
               coercedB <- generateCoercion tyEnv (typeB, translatedB) typeC
               pure (typeC, TL.ExpCond translatedA coercedB translatedC)
             else failT ("Incompatible types in branches: " ++ show b ++ " and " ++ show c)
+translateExpression _ _ e@(G.TyAssert _ _) =
+  failWithCodeT TransErrorUnsupportedTypeAssertion
+    ("Type assertions not supported by translation to SystemF: " ++ show e)
 translateExpression _ _ e = failT ("I don't know how to translate this expression yet: " ++ show e)
 
 generateMainDecls :: [G.MeBody] -> Int -> [G.Decl]

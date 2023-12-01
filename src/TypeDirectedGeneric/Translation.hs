@@ -249,7 +249,7 @@ tryInst tyEnv (G.TyFormals formals) sigmas
               dictCons tyEnv sigma (G.applyTySubst subst tau)
           )
       case eisM of
-        Left e -> pure (Left ("bound mismatch: " ++ e))
+        Left e -> pure (Left ("bound mismatch: " ++ (te_message e)))
         Right eis'' -> do
           eis <- mapM (transType tyEnv) sigmas
           eis' <- mapM (transTypeStar tyEnv) sigmas
@@ -1214,7 +1214,7 @@ runTrans prog = genRunTrans cfg prog transProg
             Right _ -> pure (Right ())
       }
 
-runTranslation' :: G.Program -> (Either String TL.Prog, [T.Text])
+runTranslation' :: G.Program -> (Either TransError TL.Prog, [T.Text])
 runTranslation' = runTrans
 
 -- Terminates the program if type checking fails
@@ -1228,7 +1228,7 @@ runTranslation traceFlag header filePath prog = do
     case result of
       Right p -> pure p
       Left err -> do
-        hPutStrLn stderr ("Typechecking " ++ filePath ++ " failed: " ++ err)
+        hPutStrLn stderr ("Typechecking " ++ filePath ++ " failed: " ++ (te_message  err))
         exitWith (ExitFailure 1)
   pure (header <> TL.translateProg stdlibForTrans tProg)
 

@@ -1,5 +1,4 @@
 /// TEST TYPECHECK_GOOD
-/// TEST_SYSTEMF SKIP
 
 package main;
 type Any(type ) interface {};

@@ -1,5 +1,4 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-Result (tuple-9 42 45 48 49 50 51 52 53 35))
-/// TEST_SYSTEMF SKIP
 
 type P struct { f int }
 

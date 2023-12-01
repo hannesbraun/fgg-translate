@@ -1,5 +1,4 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-T tuple-0)
-/// TEST_SYSTEMF SKIP
 
 //$ go run github.com/rhu1/fgg -v -eval=3 fg/examples/misc/equal/equal.go
 // Cf.

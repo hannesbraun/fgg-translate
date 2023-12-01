@@ -1,5 +1,4 @@
 /// TEST EVAL_GOOD:  (tuple-2 Kt-Box (tuple-1 42))
-/// TEST_SYSTEMF SKIP
 
 // 2021-11-12: This example demonstrates a bug in the translation detected
 // while proving semantic preservation.

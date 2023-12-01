@@ -1,5 +1,4 @@
 /// TEST EVAL_GOOD: (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Succ (tuple-1 (tuple-2 Kt-Zero tuple-0)))))))))))))
-/// TEST_SYSTEMF SKIP
 
 //$ go run github.com/rhu1/fgg -v -eval=46 fg/examples/misc/compose/compose.go
 // Cf.

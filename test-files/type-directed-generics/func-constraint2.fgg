@@ -1,5 +1,4 @@
 /// TEST EVAL_GOOD: 3
-/// TEST_SYSTEMF SKIP
 type Box(type a) struct { content a }
 
 type I interface {

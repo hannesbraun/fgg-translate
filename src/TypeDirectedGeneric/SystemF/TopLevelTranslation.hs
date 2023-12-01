@@ -34,7 +34,7 @@ runTrans goProgram =
           }
    in genRunTrans config goProgram topLevelTranslate
 
-runTranslation' :: G.Program -> (Either String UntypedTL.Prog, [T.Text])
+runTranslation' :: G.Program -> (Either TransError UntypedTL.Prog, [T.Text])
 runTranslation' p =
   case TypeDirected.runTrans p of
     (Left err, trace) -> (Left err, trace)
@@ -50,6 +50,6 @@ runTranslation traceFlag header filePath prog = do
     case result of
       Right p -> pure p
       Left err -> do
-        hPutStrLn stderr ("Typechecking " ++ filePath ++ " failed: " ++ err)
+        hPutStrLn stderr ("Typechecking " ++ filePath ++ " failed: " ++ (te_message err))
         exitWith (ExitFailure 1)
   pure (header <> UntypedTL.translateProg T.empty tProg)

@@ -1,5 +1,4 @@
 /// TEST EVAL_GOOD: 42
-/// TEST_SYSTEMF SKIP
 
 type I1 interface { foo() int }
 type S struct {}

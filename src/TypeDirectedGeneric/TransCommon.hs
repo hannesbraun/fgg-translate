@@ -160,7 +160,15 @@ data TransState = TransState
   , ts_contextStack :: [String]
   }
 
-type TransError = String
+data TransErrorCode =
+  TransErrorUnsupportedTypeAssertion
+  | TransErrorDuplicateDeclaration
+  -- more will come
+
+data TransError = TransError
+  { te_errorCode :: Maybe TransErrorCode
+  , te_message :: String
+  }
 
 type TransTracer = Writer (DL.DList T.Text) -- trace in reverse
 
@@ -177,7 +185,7 @@ newtype T a = T {unT :: RWST TransEnv () TransState (ExceptT TransError TransTra
     , Monad
     , MonadReader TransEnv
     , MonadState TransState
-    , MonadError String
+    , MonadError TransError
     )
 
 genFreshVar :: T T.Text
@@ -245,12 +253,18 @@ withCtx c action = do
   pure x
 
 failT :: String -> T a
-failT msg = do
+failT = failT' Nothing
+
+failWithCodeT :: TransErrorCode -> String -> T a
+failWithCodeT code msg = failT' (Just code) msg
+
+failT' :: Maybe TransErrorCode -> String -> T a
+failT' code msg = do
   stack <- gets ts_contextStack
   case stack of
-    [] -> throwError msg
+    [] -> throwError (TransError code msg)
     _ ->
-      throwError (msg ++ "\nContext:\n" ++ unlines (map (\s -> "  " ++ s) stack))
+      throwError (TransError code (msg ++ "\nContext:\n" ++ unlines (map (\s -> "  " ++ s) stack)))
 
 catchT :: T a -> T (Either TransError a)
 catchT (T action) =
@@ -521,7 +535,7 @@ genRunTrans cfg prog transProg =
         structs <- addIfNotExists t (Struct t formals fields) (te_structs env)
         Right (env{te_structs = structs})
       G.TypeDecl _t _formals (G.TySyn _ty) -> do
-        Left "type synonyms are not supported in the translation for generics"
+        Left (TransError Nothing "type synonyms are not supported in the translation for generics")
       G.TypeDecl t formals (G.Iface methods) -> do
         checkExists t (te_structs env)
         ifaces <- addIfNotExists t (Iface t formals methods) (te_ifaces env)
@@ -531,7 +545,7 @@ genRunTrans cfg prog transProg =
             m = G.ms_name spec
         case List.find (\mDecl -> G.ms_name (me_spec mDecl) == m) oldMethods of
           Just _ ->
-            Left $
+            Left $ TransError (Just TransErrorDuplicateDeclaration) $
               "Duplicate method declaration for receiver "
                 ++ prettyS recvTy
                 ++ " and method "
@@ -555,10 +569,11 @@ checkExists :: (Pretty k, Ord k) => k -> Map k a -> Either TransError ()
 checkExists k m =
   case Map.lookup k m of
     Nothing -> Right ()
-    Just _ -> Left ("Duplicate declaration for " ++ prettyS k)
+    Just _ ->
+      Left $ TransError (Just TransErrorDuplicateDeclaration) ("Duplicate declaration for " ++ prettyS k)
 
 addIfNotExists :: (Pretty k, Ord k) => k -> a -> Map k a -> Either TransError (Map k a)
 addIfNotExists k a m =
   case Map.lookup k m of
     Nothing -> Right (Map.insert k a m)
-    Just _ -> Left ("Duplicate declaration for " ++ prettyS k)
+    Just _ -> Left $ TransError (Just TransErrorDuplicateDeclaration) ("Duplicate declaration for " ++ prettyS k)
