@@ -755,14 +755,16 @@ translateExpression varEnv tyEnv (G.MeCall (G.Var (G.VarName "fmt")) meName _ ar
   let translatedArgs = map snd translatedArgsWithTypes
   let rawMeName = T.unpack $ G.unMeName meName
   _ <- pure $ unless (rawMeName `elem` ["Printf", "Sprintf"]) (failT $ "Method is not part of fmt: " ++ show meName)
-  (formatStringType, formatString) <- pure $ head translatedArgsWithTypes
+  (formatStringType, formatString) <- case translatedArgsWithTypes of
+    [] -> failT $ (show meName) ++ " requires a string literal as the first argument"
+    a : _ -> pure a
   when (formatStringType /= tyBuiltinToType TyString) $
     failT ("Printf/Sprintf requires a string literal as the first argument, not " ++ show formatStringType)
   let formatStringLit =
         case formatString of
           TL.ExpStr fmtStr -> fmtStr
           _ -> "(s)printf only supports string literals as format strings"
-  let valueArgs = tail translatedArgs
+  let valueArgs = drop 1 translatedArgs
   if rawMeName == "Printf"
     then pure (G.tyVoid, TL.ExpPrintf formatStringLit valueArgs)
     else pure (tyBuiltinToType TyString, TL.ExpSprintf formatStringLit valueArgs)

@@ -118,7 +118,6 @@ runTestForSpec path idx spec transType = do
           reportOk path transType idx "typechecked as expected"
         EvalGood r -> checkEval racketProg (Right r)
         EvalBad r -> checkEval racketProg (Left r)
-        Skip -> reportError path transType "this test should have been skipped" trace
  where
   (runTrans, stdlib) = case transType of
     Normal -> (Translation.runTranslation', Translation.stdlibForTrans)

@@ -15,6 +15,7 @@ import Common.Utils
 import TypeDirectedGeneric.SystemF.Pretty ()
 import TypeDirectedGeneric.SystemF.Syntax
 
+import Control.Monad
 import Control.Monad.Except
 import Control.Monad.RWS.Strict
 import Control.Monad.State.Strict
@@ -235,13 +236,14 @@ tyOfExp e = do
     ExpTyAbs a e -> do
       tyRes <- withNewTyVar a (tyOfExp e)
       pure (TyForall a tyRes)
-    ExpCase _ [] -> failT "Case with no clauses"
     ExpCase e clauses -> do
       ty <- tyOfExp e
       clauseTys <- forM clauses (tyOfClause ty)
       if not (allEq clauseTys)
         then failT ("Clauses of case have different types: " ++ prettyS clauseTys)
-        else pure (head clauseTys)
+        else case clauseTys of
+          [] -> failT "Case with no clauses"
+          ty : _ -> pure ty
     ExpBinOp e1 op e2 -> do
       ty1 <- tyOfExp e1
       ty2 <- tyOfExp e2
