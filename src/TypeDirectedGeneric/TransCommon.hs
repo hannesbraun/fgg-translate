@@ -12,6 +12,7 @@ import Common.Types
 import Common.Utils
 import Prettyprinter
 
+import Control.Monad
 import Control.Monad.Except
 import Control.Monad.RWS.Strict
 import Control.Monad.Writer
@@ -250,7 +251,7 @@ withCtx c action = do
   trace (T.pack $ "Starting " ++ c)
   x <- action
   trace (T.pack $ "Finished " ++ c)
-  modify' (\s -> s{ts_contextStack = tail (ts_contextStack s)})
+  modify' (\s -> s{ts_contextStack = drop 1 (ts_contextStack s)})
   pure x
 
 failT :: String -> T a
