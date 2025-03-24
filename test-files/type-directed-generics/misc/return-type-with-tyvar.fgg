@@ -1,0 +1,29 @@
+/// TEST TYPECHECK_GOOD
+
+package main
+
+type Any interface {}
+
+type EQ[T Any] interface {
+	eq(x T) bool
+}
+
+type MyInt struct {
+	i int
+}
+
+func (this MyInt) eq(other MyInt) bool {
+	return this.i == other.i
+}
+
+type Set[T EQ[T]] struct {
+}
+
+func EmptySet[T EQ[T]]() Set[T] {
+	return Set[T]{}
+}
+
+func main() {
+	var i = MyInt{5}
+	var intSet = EmptySet[MyInt]()
+}

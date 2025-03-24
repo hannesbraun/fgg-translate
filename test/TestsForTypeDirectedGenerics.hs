@@ -82,7 +82,7 @@ runTestForSpec :: FilePath -> Int -> TestSpec -> TranslationType -> IO ()
 runTestForSpec _ _ Skip _ = pure ()
 runTestForSpec path idx spec transType = do
   let parseCfg =
-        if "oopsla2022" `L.isInfixOf` path || "jfp2023" `L.isInfixOf` path
+        if "oopsla2022" `L.isInfixOf` path || "jfp2023" `L.isInfixOf` path || "test-files/type-directed-generics/misc" `L.isPrefixOf` path
           then ParserConfig ModernGenerics
           else ParserConfig OldstyleGenerics
   prog <- parseFile path parseCfg
