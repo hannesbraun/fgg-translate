@@ -607,7 +607,10 @@ methodCallFun varEnv tyEnv meName args methodTypeArgs = do
   let constraints = map (\x -> maybeType (snd x)) $ G.unTyFormals $ G.msig_tyArgs signature
   translatedExp <-
     methodCall varEnv tyEnv methodVar Nothing (Just args) expectedArgTypes (Just methodTypeArgs) [] constraints (G.msig_tyArgs signature)
-  pure (G.msig_res signature, translatedExp)
+  let resultType = G.msig_res signature
+  let substitutions = zip (map fst (G.unTyFormals $ G.msig_tyArgs signature)) methodTypeArgs
+  let substitutedResultType = substituteTypeVariables substitutions resultType
+  pure (substitutedResultType, translatedExp)
 
 typeOfField :: Struct -> [G.Type] -> G.FieldName -> T G.Type
 typeOfField struct tyArgs fieldName = do
